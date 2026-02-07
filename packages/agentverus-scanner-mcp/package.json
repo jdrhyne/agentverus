@@ -6,13 +6,13 @@
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/agentverus/agentverus-scanner.git"
+		"url": "git+https://github.com/agentverus/agentverus-scanner.git"
 	},
 	"engines": {
 		"node": ">=22"
 	},
 	"bin": {
-		"agentverus-scanner-mcp": "./dist/server.js"
+		"agentverus-scanner-mcp": "dist/server.js"
 	},
 	"files": [
 		"dist",
