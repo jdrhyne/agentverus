@@ -23,10 +23,11 @@ export const BaseLayout: FC<BaseLayoutProps> = ({ title, description, children }
 							theme: {
 								extend: {
 									colors: {
-										certified: '#2ECC40',
-										conditional: '#DFB317',
-										suspicious: '#FE7D37',
-										rejected: '#E05D44',
+										certified: '#3B82F6',
+										conditional: '#F59E0B',
+										suspicious: '#F97316',
+										rejected: '#EF4444',
+										accent: '#3B82F6',
 									}
 								}
 							}
@@ -52,7 +53,7 @@ export const BaseLayout: FC<BaseLayoutProps> = ({ title, description, children }
 							</a>
 							<a
 								href="/submit"
-								class="bg-certified hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition"
+								class="bg-certified hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition"
 							>
 								Scan Free
 							</a>

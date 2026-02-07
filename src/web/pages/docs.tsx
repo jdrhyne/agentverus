@@ -21,7 +21,7 @@ docsApp.get("/docs", (c) => {
 						<h2 class="text-2xl font-semibold mb-4">Authentication</h2>
 						<p class="text-gray-400 mb-3">Some endpoints require an API key. Pass it via header:</p>
 						<pre class="bg-gray-900 border border-gray-800 rounded-lg p-4 text-sm overflow-x-auto mb-4">
-							<code class="text-green-400">Authorization: Bearer at_your_api_key_here</code>
+							<code class="text-blue-400">Authorization: Bearer at_your_api_key_here</code>
 						</pre>
 						<p class="text-gray-400">
 							Public endpoints (GET) don't require authentication. POST endpoints require a valid
@@ -117,7 +117,7 @@ docsApp.get("/docs", (c) => {
 								<span
 									class={`px-3 py-1 rounded text-sm font-bold ${
 										endpoint.method === "GET"
-											? "bg-green-700 text-green-100"
+											? "bg-blue-700 text-blue-100"
 											: "bg-blue-700 text-blue-100"
 									}`}
 								>
@@ -140,7 +140,7 @@ docsApp.get("/docs", (c) => {
 							<div class="mb-4">
 								<p class="text-sm font-medium mb-1">Response:</p>
 								<pre class="bg-gray-800 rounded-lg p-3 text-sm overflow-x-auto">
-									<code class="text-green-300">{endpoint.response}</code>
+									<code class="text-blue-300">{endpoint.response}</code>
 								</pre>
 							</div>
 

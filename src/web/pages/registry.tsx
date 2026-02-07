@@ -66,7 +66,7 @@ registryApp.get("/registry", (c) => {
 							<p class="mb-6">Be the first to submit a skill for scanning.</p>
 							<a
 								href="/submit"
-								class="bg-certified hover:bg-green-600 text-white px-6 py-3 rounded-lg font-medium transition"
+								class="bg-certified hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition"
 							>
 								Submit a Skill
 							</a>

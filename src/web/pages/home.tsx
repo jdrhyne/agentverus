@@ -22,7 +22,7 @@ homeApp.get("/", (c) => {
 					<div class="flex gap-4 justify-center">
 						<a
 							href="/submit"
-							class="bg-certified hover:bg-green-600 text-white px-8 py-3 rounded-lg font-semibold text-lg transition"
+							class="bg-certified hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold text-lg transition"
 						>
 							Scan a Skill Free
 						</a>
@@ -161,7 +161,7 @@ homeApp.get("/", (c) => {
 					</p>
 					<a
 						href="/submit"
-						class="bg-certified hover:bg-green-600 text-white px-8 py-3 rounded-lg font-semibold text-lg transition inline-block"
+						class="bg-certified hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold text-lg transition inline-block"
 					>
 						Start Scanning →
 					</a>
