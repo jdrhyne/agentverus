@@ -253,7 +253,7 @@ The trust score is **transparent and explainable**. No black box. Every point is
 ```typescript
 interface TrustReport {
   overall: number;          // 0-100 (weighted average of categories)
-  grade: TrustGrade;        // A+ (95-100), A (90-94), B (80-89), C (70-79), D (60-69), F (<60)
+  badge: TrustBadge;         // 'certified' (90-100) | 'approved' (75-89) | 'caution' (50-74) | 'flagged' (<50 or Critical)
   categories: {
     permissions: CategoryScore;    // Weight: 25%
     injection: CategoryScore;      // Weight: 30% (highest — this is the biggest threat)
@@ -307,16 +307,18 @@ overall = (permissions.score × 0.25) + (injection.score × 0.30) +
           (content.score × 0.10)
 ```
 
-### Grade Mapping
+### Badge Tiers (4-Tier System)
 
-| Grade | Score Range | Badge Color | Meaning |
-|-------|------------|-------------|---------|
-| A+ | 95-100 | `#2ECC40` (bright green) | Excellent — no issues found |
-| A | 90-94 | `#2ECC40` (green) | Very good — minor notes only |
-| B | 80-89 | `#97CA00` (yellow-green) | Good — low-severity findings |
-| C | 70-79 | `#DFB317` (yellow) | Acceptable — medium issues present |
-| D | 60-69 | `#FE7D37` (orange) | Poor — high-severity issues |
-| F | 0-59 | `#E05D44` (red) | Fail — critical issues found |
+| Badge | Score Range | Requirements | Color | Hex | Meaning |
+|-------|------------|--------------|-------|-----|---------|
+| 🟢 **CERTIFIED** | 90-100 | Zero Critical, Zero High | Green | `#2ECC40` | Highest standard. Thoroughly analyzed, no security concerns. The badge publishers want. |
+| 🟡 **APPROVED** | 75-89 | Zero Critical, ≤2 High | Yellow | `#DFB317` | Safe to use. May have minor permission overreach or missing best practices. No danger. |
+| 🟠 **CAUTION** | 50-74 | Zero Critical | Orange | `#FE7D37` | Has real issues users should be aware of. Scope creep, external deps, or behavioral concerns. Not dangerous but proceed with awareness. |
+| 🔴 **FLAGGED** | <50 OR any Critical | — | Red | `#E05D44` | Do not install. Contains critical security issues: instruction injection, data exfiltration, or obfuscation. |
+
+**Key constraint:** A single Critical finding → automatic FLAGGED regardless of score. The badge system is NOT just about the number — it enforces hard gates on severity.
+
+**Upgrade path:** Publishers can see exactly which findings to fix to move up a tier. CAUTION → APPROVED requires resolving all but ≤2 High findings. APPROVED → CERTIFIED requires resolving ALL High findings and scoring ≥90.
 
 ---
 
@@ -470,7 +472,7 @@ Modeled after OWASP Top 10, specifically for AI agent skill files.
   - `src/db/client.ts` exports a configured Drizzle client using Neon serverless driver
   - All columns have appropriate types, constraints, and indexes
 - **Validation:** `pnpm db:push` succeeds against a Neon database (or `drizzle-kit generate` produces valid SQL)
-- **Codex Prompt:** "Create src/db/schema.ts with Drizzle ORM tables for PostgreSQL: skills (id uuid PK, url text unique, name text, description text, format enum openclaw/claude/generic, content_hash text, created_at, updated_at), scan_results (id uuid PK, skill_id FK, overall_score int, grade text, permissions_score int, injection_score int, dependencies_score int, behavioral_score int, content_score int, report jsonb, scanner_version text, scanned_at, duration_ms int), findings (id uuid PK, scan_result_id FK, finding_id text, category text, severity enum critical/high/medium/low/info, title text, description text, evidence text, line_number int, deduction int, recommendation text, owasp_category text), certifications (id uuid PK, skill_id FK, scan_result_id FK, tier enum basic/enterprise, status enum pending/active/expired/revoked, stripe_payment_id text, badge_url text, attestation text, issued_at, expires_at, publisher_email text), api_keys (id uuid PK, key_hash text unique, name text, tier enum free/pro/enterprise, requests_today int default 0, requests_month int default 0, created_at, last_used_at). Create appropriate indexes on frequently queried columns. Also create src/db/client.ts that exports a Drizzle client using @neondatabase/serverless."
+- **Codex Prompt:** "Create src/db/schema.ts with Drizzle ORM tables for PostgreSQL: skills (id uuid PK, url text unique, name text, description text, format enum openclaw/claude/generic, content_hash text, created_at, updated_at), scan_results (id uuid PK, skill_id FK, overall_score int, badge text, permissions_score int, injection_score int, dependencies_score int, behavioral_score int, content_score int, report jsonb, scanner_version text, scanned_at, duration_ms int), findings (id uuid PK, scan_result_id FK, finding_id text, category text, severity enum critical/high/medium/low/info, title text, description text, evidence text, line_number int, deduction int, recommendation text, owasp_category text), certifications (id uuid PK, skill_id FK, scan_result_id FK, tier enum basic/enterprise, status enum pending/active/expired/revoked, stripe_payment_id text, badge_url text, attestation text, issued_at, expires_at, publisher_email text), api_keys (id uuid PK, key_hash text unique, name text, tier enum free/pro/enterprise, requests_today int default 0, requests_month int default 0, created_at, last_used_at). Create appropriate indexes on frequently queried columns. Also create src/db/client.ts that exports a Drizzle client using @neondatabase/serverless."
 
 ---
 
@@ -632,7 +634,7 @@ Modeled after OWASP Top 10, specifically for AI agent skill files.
   - Includes scan metadata (timestamp, scanner version, duration)
   - Deterministic: same input always produces same output
 - **Validation:** `test/scanner/scoring.test.ts` with known category scores → expected overall + grade
-- **Codex Prompt:** "Create src/scanner/scoring.ts. Export function aggregateScores(categories: Record<string, CategoryScore>, metadata: ScanMetadata): TrustReport. Compute overall score as weighted average: permissions (0.25), injection (0.30), dependencies (0.20), behavioral (0.15), content (0.10). Map to grade: A+ (95-100), A (90-94), B (80-89), C (70-79), D (60-69), F (<60). Collect all findings from all categories, sort by severity (critical > high > medium > low > info). Return the full TrustReport. Write tests with known inputs → expected outputs."
+- **Codex Prompt:** "Create src/scanner/scoring.ts. Export function aggregateScores(categories: Record<string, CategoryScore>, metadata: ScanMetadata): TrustReport. Compute overall score as weighted average: permissions (0.25), injection (0.30), dependencies (0.20), behavioral (0.15), content (0.10). Map to 4-tier badge system: CERTIFIED (90-100, zero Critical AND zero High findings), APPROVED (75-89, zero Critical AND ≤2 High), CAUTION (50-74, zero Critical), FLAGGED (<50 OR any Critical finding — Critical auto-flags regardless of score). Collect all findings from all categories, sort by severity (critical > high > medium > low > info). Return the full TrustReport. Write tests with known inputs → expected outputs, including edge case: score of 95 with one Critical finding should be FLAGGED."
 
 ### Task 1.9: Scanner Orchestrator
 
@@ -663,7 +665,7 @@ Modeled after OWASP Top 10, specifically for AI agent skill files.
   - Colorized output (green for good scores, red for bad)
   - Exit code 0 for grades A-C, exit code 1 for D-F
 - **Validation:** `pnpm scan test/fixtures/skills/safe-basic.md` prints score 90+ with green text
-- **Codex Prompt:** "Create src/scanner/cli.ts as a Node.js CLI script. Parse args for a file path or --url flag. Read the file or fetch the URL. Run scanSkill() and print the result. Format output: show overall score and grade in color (green for A/B, yellow for C, red for D/F), then a summary of findings grouped by severity. Exit with code 0 for A-C, code 1 for D-F. Add a 'scan' script to package.json that runs this file with tsx."
+- **Codex Prompt:** "Create src/scanner/cli.ts as a Node.js CLI script. Parse args for a file path or --url flag. Read the file or fetch the URL. Run scanSkill() and print the result. Format output: show overall score and badge tier in color (green for CERTIFIED, yellow for APPROVED, orange for CAUTION, red for FLAGGED), then a summary of findings grouped by severity. Exit with code 0 for CERTIFIED/APPROVED, code 1 for CAUTION/FLAGGED. Add a 'scan' script to package.json that runs this file with tsx."
 
 ---
 
@@ -726,12 +728,12 @@ Modeled after OWASP Top 10, specifically for AI agent skill files.
 - **Dependencies:** 2.1
 - **Acceptance Criteria:**
   - `GET /api/v1/skills` returns paginated list of skills with their latest trust scores
-  - Query params: `?q=<search>`, `?grade=<A+|A|B|C|D|F>`, `?sort=<score|name|date>`, `?order=<asc|desc>`, `?page=<n>`, `?limit=<n>` (default 20, max 100)
+  - Query params: `?q=<search>`, `?badge=<certified|approved|caution|flagged>`, `?sort=<score|name|date>`, `?order=<asc|desc>`, `?page=<n>`, `?limit=<n>` (default 20, max 100)
   - Search queries against skill name, description, and URL
   - Returns: `{ skills: [...], pagination: { page, limit, total, totalPages } }`
   - Each skill includes: id, name, url, description, format, latestScore, latestGrade, lastScannedAt
-- **Validation:** `test/api/skills.test.ts` — search returns matching results; pagination works; grade filter works
-- **Codex Prompt:** "Create src/api/v1/skills.ts as a Hono route group. GET /skills returns a paginated list of skills with latest trust scores. Query params: q (text search on name/description/url via ILIKE), grade (filter by grade), sort (score/name/date, default: score), order (asc/desc, default: desc), page (default 1), limit (default 20, max 100). Join skills with their latest scan_result. Return { skills: SkillSummary[], pagination: { page, limit, total, totalPages } }. Write tests for search, filtering, and pagination."
+- **Validation:** `test/api/skills.test.ts` — search returns matching results; pagination works; badge filter works
+- **Codex Prompt:** "Create src/api/v1/skills.ts as a Hono route group. GET /skills returns a paginated list of skills with latest trust scores. Query params: q (text search on name/description/url via ILIKE), badge (filter by badge tier: certified|approved|caution|flagged), sort (score/name/date, default: score), order (asc/desc, default: desc), page (default 1), limit (default 20, max 100). Join skills with their latest scan_result. Return { skills: SkillSummary[], pagination: { page, limit, total, totalPages } }. Write tests for search, filtering, and pagination."
 
 ### Task 2.5: API Authentication Middleware
 
@@ -807,15 +809,15 @@ Modeled after OWASP Top 10, specifically for AI agent skill files.
 - **Acceptance Criteria:**
   - Route: `GET /registry`
   - Search bar at top (uses htmx for live search, falls back to form submission)
-  - Filter by grade (A+, A, B, C, D, F)
+  - Filter by badge tier (Certified, Approved, Caution, Flagged)
   - Sort by: trust score (default), name, date scanned
   - Paginated results (20 per page)
-  - Each skill card shows: name, URL (truncated), trust score (colorized), grade badge, date scanned, format icon
+  - Each skill card shows: name, URL (truncated), trust score (colorized), badge tier, date scanned, format icon
   - Clicking a skill goes to `/skill/:id` detail page
   - Empty state: "No skills found. Be the first to submit a skill for scanning."
   - Loading state via htmx indicators
 - **Validation:** Visit `/registry` → see list of skills (or empty state); search works; pagination works
-- **Codex Prompt:** "Create src/web/pages/registry.tsx with a GET /registry Hono route. Query the database for skills with latest scores (use the same logic as the skills API). Render a page in BaseLayout with: search bar at top (form submitting to same page with q param, enhanced with htmx hx-get for live search), grade filter pills (A+ through F), sort dropdown (score/name/date), and a grid of skill cards. Each card shows: skill name, truncated URL, trust score number (colorized: green >80, yellow 60-80, red <60), grade badge, scan date, format indicator. Cards link to /skill/:id. Include pagination controls at bottom. Handle empty results with a friendly message and CTA to submit a skill."
+- **Codex Prompt:** "Create src/web/pages/registry.tsx with a GET /registry Hono route. Query the database for skills with latest scores (use the same logic as the skills API). Render a page in BaseLayout with: search bar at top (form submitting to same page with q param, enhanced with htmx hx-get for live search), badge filter pills (Certified green, Approved yellow, Caution orange, Flagged red), sort dropdown (score/name/date), and a grid of skill cards. Each card shows: skill name, truncated URL, trust score number (colorized: green CERTIFIED ≥90, yellow APPROVED 75-89, orange CAUTION 50-74, red FLAGGED <50), grade badge, scan date, format indicator. Cards link to /skill/:id. Include pagination controls at bottom. Handle empty results with a friendly message and CTA to submit a skill."
 
 ### Task 2.10: Web UI — Skill Detail Page
 
@@ -825,7 +827,7 @@ Modeled after OWASP Top 10, specifically for AI agent skill files.
 - **Dependencies:** 2.3, 2.8
 - **Acceptance Criteria:**
   - Route: `GET /skill/:id`
-  - Header: skill name, URL, overall score (large, colorized), grade badge
+  - Header: skill name, URL, overall score (large, colorized), badge tier
   - Category breakdown: 5 horizontal bars showing each category score with labels
   - Findings section: grouped by severity, each finding shows:
     - Severity badge (colored)
@@ -868,15 +870,15 @@ Modeled after OWASP Top 10, specifically for AI agent skill files.
 - **Complexity:** 4/10
 - **Dependencies:** None
 - **Acceptance Criteria:**
-  - `generateBadge(score: number, grade: string): string` returns SVG string
+  - `generateBadge(score: number, badge: BadgeTier): string` returns SVG string
   - Badge shows: "AgentTrust" label (left side, dark) + score/grade (right side, colored)
-  - Colors match grade table (green for A+/A, yellow-green for B, yellow for C, orange for D, red for F)
+  - Colors match badge tiers: CERTIFIED=#2ECC40 green, APPROVED=#DFB317 yellow, CAUTION=#FE7D37 orange, FLAGGED=#E05D44 red
   - Badge dimensions: 150x20 standard, with optional `?style=flat|flat-square|plastic`
   - SVG is valid and renders in all browsers
   - Optional: `?label=custom-label` to customize left side text
   - Also generate "certified" variant with checkmark icon for paid certifications
 - **Validation:** Generated SVGs render correctly in browser; validate with SVG validator
-- **Codex Prompt:** "Create src/badges/generator.ts and src/badges/templates.ts. The generator exports generateBadge(options: { score: number, grade: string, style?: 'flat' | 'flat-square' | 'plastic', label?: string, certified?: boolean }): string. Generate shields.io-style SVG badges. Left side shows label (default 'AgentTrust'), right side shows grade and score (e.g., 'A 95'). Color the right side based on grade: A+/A = #2ECC40, B = #97CA00, C = #DFB317, D = #FE7D37, F = #E05D44. Support flat style (default): rounded corners, gradient fill. flat-square: no rounded corners. If certified is true, add a small checkmark icon. The SVG should be self-contained (no external refs), accessible, and valid."
+- **Codex Prompt:** "Create src/badges/generator.ts and src/badges/templates.ts. The generator exports generateBadge(options: { score: number, badge: BadgeTier, style?: 'flat' | 'flat-square' | 'plastic', label?: string, certified?: boolean }): string. Generate shields.io-style SVG badges. Left side shows label (default 'AgentTrust'), right side shows badge tier and score (e.g., 'CERTIFIED 95'). Color the right side based on grade: CERTIFIED = #2ECC40 (green), APPROVED = #DFB317 (yellow), CAUTION = #FE7D37 (orange), FLAGGED = #E05D44 (red). Support flat style (default): rounded corners, gradient fill. flat-square: no rounded corners. If certified is true, add a small checkmark icon. The SVG should be self-contained (no external refs), accessible, and valid."
 
 ### Task 3.2: Badge API Endpoint
 
