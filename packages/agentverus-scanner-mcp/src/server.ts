@@ -5,9 +5,9 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 
-import { scanSkill, scanSkillFromUrl } from "../scanner/index.js";
-import { normalizeSkillUrl } from "../scanner/source.js";
-import { SCANNER_VERSION } from "../scanner/types.js";
+import { scanSkill, scanSkillFromUrl } from "agentverus-scanner";
+import { normalizeSkillUrl } from "agentverus-scanner/source";
+import { SCANNER_VERSION } from "agentverus-scanner/types";
 
 function toJsonText(value: unknown): string {
 	return JSON.stringify(value, null, 2);
@@ -15,7 +15,7 @@ function toJsonText(value: unknown): string {
 
 async function main(): Promise<void> {
 	const server = new McpServer({
-		name: "AgentVerus Scanner",
+		name: "AgentVerus Scanner MCP",
 		version: SCANNER_VERSION,
 	});
 
@@ -24,7 +24,7 @@ async function main(): Promise<void> {
 		{
 			title: "Normalize skill URL",
 			description:
-				"Normalize skill URLs (GitHub blob/tree URLs, ClawHub skill pages) into a direct downloadable/scan-ready URL.",
+				"Normalize skill URLs (GitHub blob/tree/repo URLs, ClawHub skill pages) into a direct downloadable/scan-ready URL.",
 			inputSchema: {
 				url: z.string().min(1),
 			},
@@ -51,9 +51,11 @@ async function main(): Promise<void> {
 			},
 		},
 		async ({ content, path, url, timeout, retries, retryDelayMs }) => {
-			const provided = [content ? "content" : null, path ? "path" : null, url ? "url" : null].filter(
-				(v) => v !== null,
-			);
+			const provided = [
+				content ? "content" : null,
+				path ? "path" : null,
+				url ? "url" : null,
+			].filter((v) => v !== null);
 			if (provided.length !== 1) {
 				return {
 					content: [
@@ -61,7 +63,7 @@ async function main(): Promise<void> {
 							type: "text",
 							text: toJsonText({
 								error:
-									"Provide exactly one of: content, path, or url. For URLs, prefer normalize_skill_url first if needed.",
+									"Provide exactly one of: content, path, or url. For URLs, normalize_skill_url can help.",
 								provided,
 							}),
 						},
@@ -87,14 +89,7 @@ async function main(): Promise<void> {
 				return { content: [{ type: "text", text: toJsonText({ target: url, report }) }] };
 			}
 
-			return {
-				content: [
-					{
-						type: "text",
-						text: toJsonText({ error: "Unexpected input state." }),
-					},
-				],
-			};
+			return { content: [{ type: "text", text: toJsonText({ error: "Unexpected input state." }) }] };
 		},
 	);
 
@@ -104,7 +99,6 @@ async function main(): Promise<void> {
 
 main().catch((err) => {
 	const message = err instanceof Error ? err.message : String(err);
-	// MCP uses stdio; keep stdout clean for protocol messages.
 	console.error(message);
 	process.exit(1);
 });

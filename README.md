@@ -76,26 +76,10 @@ jobs:
 
 ## MCP Server (Agent Integration)
 
-Starts an MCP server over stdio exposing tools:
-
-- `scan_skill` (scan by `url`, `path`, or raw `content`)
-- `normalize_skill_url` (normalize GitHub/ClawHub URLs into scan-ready URLs)
+For agent/framework integration via MCP, use the companion package:
 
 ```bash
-npx agentverus-scanner-mcp
-```
-
-Example Claude Desktop config:
-
-```json
-{
-  "mcpServers": {
-    "agentverus-scanner": {
-      "command": "npx",
-      "args": ["-y", "agentverus-scanner-mcp"]
-    }
-  }
-}
+npx -y agentverus-scanner-mcp
 ```
 
 ## Programmatic Usage
@@ -166,4 +150,3 @@ pnpm build:actions
 ## License
 
 MIT — see [LICENSE.md](./LICENSE.md).
-
