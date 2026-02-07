@@ -1,0 +1,56 @@
+name: "AgentVerus Skill Scan"
+description: "Scan SKILL.md files for security/trust issues and optionally upload SARIF to GitHub Code Scanning."
+inputs:
+  target:
+    description: "Scan target(s): file, URL, or directory. Multi-line supported."
+    required: false
+    default: "."
+  sarif:
+    description: "SARIF output file path."
+    required: false
+    default: "agentverus-scanner.sarif"
+  fail_on_severity:
+    description: "Fail if findings at/above level exist: critical|high|medium|low|info|none."
+    required: false
+    default: "high"
+  timeout:
+    description: "URL fetch timeout in ms (set <=0 to disable)."
+    required: false
+  retries:
+    description: "URL fetch retries for transient failures."
+    required: false
+  retry_delay_ms:
+    description: "Base retry delay in ms."
+    required: false
+  upload_sarif:
+    description: "Upload SARIF to GitHub Code Scanning."
+    required: false
+    default: "true"
+outputs:
+  sarif_path:
+    description: "Path to the SARIF file written by the action."
+    value: ${{ steps.scan.outputs.sarif_path }}
+  targets_scanned:
+    description: "Number of successfully scanned targets."
+    value: ${{ steps.scan.outputs.targets_scanned }}
+  failures:
+    description: "Number of targets that failed to scan."
+    value: ${{ steps.scan.outputs.failures }}
+runs:
+  using: "composite"
+  steps:
+    - id: scan
+      shell: bash
+      run: |
+        node "${{ github.action_path }}/dist/index.cjs"
+      env:
+        INPUT_TARGET: ${{ inputs.target }}
+        INPUT_SARIF: ${{ inputs.sarif }}
+        INPUT_FAIL_ON_SEVERITY: ${{ inputs.fail_on_severity }}
+        INPUT_TIMEOUT: ${{ inputs.timeout }}
+        INPUT_RETRIES: ${{ inputs.retries }}
+        INPUT_RETRY_DELAY_MS: ${{ inputs.retry_delay_ms }}
+    - if: ${{ inputs.upload_sarif == 'true' && always() }}
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ inputs.sarif }}

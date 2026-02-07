@@ -1,6 +1,7 @@
 node_modules/
-dist/
+/dist/
 *.tsbuildinfo
 .env
 .env.*
 coverage/
+data/

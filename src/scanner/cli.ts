@@ -1,8 +1,10 @@
 #!/usr/bin/env node
-import { readFile, writeFile } from "node:fs/promises";
+import { writeFile } from "node:fs/promises";
 import { basename } from "node:path";
-import { scanSkill, scanSkillFromUrl } from "./index.js";
-import type { Finding, TrustReport } from "./types.js";
+import { scanTargetsBatch } from "./runner.js";
+import { buildSarifLog } from "./sarif.js";
+import { expandScanTargets } from "./targets.js";
+import type { Finding, Severity, TrustReport } from "./types.js";
 import { SCANNER_VERSION } from "./types.js";
 
 const COLORS = {
@@ -193,34 +195,79 @@ ${COLORS.bold}AgentVerus Scanner v${SCANNER_VERSION}${COLORS.reset}
 Security and trust analysis for AI agent skills.
 
 ${COLORS.bold}USAGE${COLORS.reset}
-  agentverus-scanner scan <file-or-url> [options]
+  agentverus-scanner scan <target...> [options]
   agentverus-scanner --help
   agentverus-scanner --version
 
 ${COLORS.bold}COMMANDS${COLORS.reset}
-  scan <target>    Scan a skill file or URL
+  scan <target...> Scan a skill file, URL, or directory (directories are searched for SKILL.md)
 
 ${COLORS.bold}OPTIONS${COLORS.reset}
   --json           Output raw JSON report
   --report [path]  Generate markdown report (default: <name>-trust-report.md)
+  --sarif [path]   Write SARIF 2.1.0 output (default: agentverus-scanner.sarif)
+  --fail-on-severity <level>  Fail if findings at/above level exist (critical|high|medium|low|info|none)
+  --timeout <ms>    URL fetch timeout in ms (default varies by source; set <=0 to disable)
+  --retries <n>     URL fetch retries for transient failures (default: 2)
+  --retry-delay-ms <ms>  Base retry delay in ms (default: 750)
   --help, -h       Show this help
   --version, -v    Show version
 
 ${COLORS.bold}EXAMPLES${COLORS.reset}
   agentverus-scanner scan ./SKILL.md
+  agentverus-scanner scan . --sarif
   agentverus-scanner scan https://raw.githubusercontent.com/user/repo/main/SKILL.md
   agentverus-scanner scan ./SKILL.md --json
   agentverus-scanner scan ./SKILL.md --report
   agentverus-scanner scan ./SKILL.md --report my-report.md
+  agentverus-scanner scan ./SKILL.md --sarif results.sarif --fail-on-severity high
 
 ${COLORS.bold}EXIT CODES${COLORS.reset}
-  0  CERTIFIED or CONDITIONAL
-  1  SUSPICIOUS or REJECTED
+  0  Scan passed
+  1  Scan completed but policy failed
+  2  One or more targets failed to scan
 
 ${COLORS.bold}MORE INFO${COLORS.reset}
   https://agentverus.ai
   https://github.com/agentverus/agentverus-scanner
 `);
+}
+
+type FailOnSeverity = Severity | "none";
+
+const FAIL_SEVERITY_RANK: Readonly<Record<Severity, number>> = {
+	critical: 0,
+	high: 1,
+	medium: 2,
+	low: 3,
+	info: 4,
+};
+
+function parseFailOnSeverity(value: string): FailOnSeverity {
+	const lower = value.toLowerCase();
+	if (lower === "none") return "none";
+	if (lower === "critical" || lower === "high" || lower === "medium" || lower === "low" || lower === "info") {
+		return lower;
+	}
+	throw new Error(`Invalid --fail-on-severity value: ${value}`);
+}
+
+function shouldFailOnSeverity(reports: readonly TrustReport[], threshold: FailOnSeverity): boolean {
+	if (threshold === "none") return false;
+	const limit = FAIL_SEVERITY_RANK[threshold] ?? 99;
+	for (const report of reports) {
+		for (const finding of report.findings) {
+			if ((FAIL_SEVERITY_RANK[finding.severity] ?? 99) <= limit) return true;
+		}
+	}
+	return false;
+}
+
+function parseOptionalInt(value: string | undefined, flag: string): number | undefined {
+	if (value === undefined) return undefined;
+	const n = Number.parseInt(value, 10);
+	if (Number.isNaN(n)) throw new Error(`Invalid ${flag} value: ${value}`);
+	return n;
 }
 
 async function main(): Promise<void> {
@@ -250,59 +297,179 @@ async function main(): Promise<void> {
 
 	// Remove "scan" from args
 	const scanArgs = args.slice(1);
-	const jsonFlag = scanArgs.includes("--json");
-	const reportFlagIndex = scanArgs.indexOf("--report");
-	const reportFlag = reportFlagIndex !== -1;
+	let jsonFlag = false;
+	let reportFlag = false;
 	let reportPath: string | undefined;
+	let sarifFlag = false;
+	let sarifPath: string | undefined;
+	let failOnSeverity: FailOnSeverity | undefined;
+	let timeout: number | undefined;
+	let retries: number | undefined;
+	let retryDelayMs: number | undefined;
 
-	if (reportFlag && scanArgs[reportFlagIndex + 1] && !scanArgs[reportFlagIndex + 1]?.startsWith("-")) {
-		reportPath = scanArgs[reportFlagIndex + 1];
+	const rawTargets: string[] = [];
+
+	for (let i = 0; i < scanArgs.length; i += 1) {
+		const arg = scanArgs[i];
+		if (!arg) continue;
+
+		if (arg === "--json") {
+			jsonFlag = true;
+			continue;
+		}
+
+		if (arg === "--report") {
+			reportFlag = true;
+			const next = scanArgs[i + 1];
+			if (next && !next.startsWith("-")) {
+				reportPath = next;
+				i += 1;
+			}
+			continue;
+		}
+
+		if (arg === "--sarif") {
+			sarifFlag = true;
+			const next = scanArgs[i + 1];
+			if (next && !next.startsWith("-")) {
+				sarifPath = next;
+				i += 1;
+			}
+			continue;
+		}
+
+		if (arg === "--fail-on-severity") {
+			const next = scanArgs[i + 1];
+			if (!next || next.startsWith("-")) throw new Error("Missing value for --fail-on-severity");
+			failOnSeverity = parseFailOnSeverity(next);
+			i += 1;
+			continue;
+		}
+
+		if (arg === "--timeout") {
+			const next = scanArgs[i + 1];
+			if (!next || next.startsWith("-")) throw new Error("Missing value for --timeout");
+			timeout = parseOptionalInt(next, "--timeout");
+			i += 1;
+			continue;
+		}
+
+		if (arg === "--retries") {
+			const next = scanArgs[i + 1];
+			if (!next || next.startsWith("-")) throw new Error("Missing value for --retries");
+			retries = parseOptionalInt(next, "--retries");
+			i += 1;
+			continue;
+		}
+
+		if (arg === "--retry-delay-ms") {
+			const next = scanArgs[i + 1];
+			if (!next || next.startsWith("-")) throw new Error("Missing value for --retry-delay-ms");
+			retryDelayMs = parseOptionalInt(next, "--retry-delay-ms");
+			i += 1;
+			continue;
+		}
+
+		if (arg.startsWith("-")) throw new Error(`Unknown option: ${arg}`);
+
+		rawTargets.push(arg);
 	}
 
-	// Find the target (first non-flag argument)
-	const target = scanArgs.find((a) => !a.startsWith("-") && a !== reportPath);
-
-	if (!target) {
-		console.error("Error: No file path or URL provided");
+	if (rawTargets.length === 0) {
+		console.error("Error: No scan targets provided");
 		printUsage();
 		process.exit(1);
 	}
 
-	const isUrl = target.startsWith("http://") || target.startsWith("https://");
-
-	let report: TrustReport;
-
-	if (isUrl) {
-		if (!jsonFlag) console.log(`Scanning URL: ${target}`);
-		report = await scanSkillFromUrl(target);
-	} else {
-		if (!jsonFlag) console.log(`Scanning file: ${target}`);
-		const content = await readFile(target, "utf-8");
-		report = await scanSkill(content);
+	const expandedTargets = await expandScanTargets(rawTargets);
+	if (expandedTargets.length === 0) {
+		console.error("Error: No SKILL.md files found in the provided directory target(s)");
+		process.exit(1);
 	}
 
-	if (jsonFlag) {
-		console.log(JSON.stringify(report, null, 2));
-	} else {
-		printReport(report);
-	}
+	const scanOptions = { timeout, retries, retryDelayMs };
 
-	if (reportFlag) {
-		const name = isUrl ? "skill" : basename(target, ".md");
-		const outPath = reportPath || `${name}-trust-report.md`;
-		const markdown = generateMarkdownReport(report, target);
-		await writeFile(outPath, markdown, "utf-8");
-		if (!jsonFlag) {
-			console.log(`\n${COLORS.green}Report saved to: ${outPath}${COLORS.reset}`);
+	if (!jsonFlag) {
+		if (expandedTargets.length === 1) {
+			console.log(`Scanning: ${expandedTargets[0]}`);
+		} else {
+			console.log(`Scanning ${expandedTargets.length} targets...`);
 		}
 	}
 
-	// Exit code based on badge
-	const exitCode = report.badge === "certified" || report.badge === "conditional" ? 0 : 1;
-	process.exit(exitCode);
+	const { reports: scanned, failures } = await scanTargetsBatch(expandedTargets, scanOptions);
+
+	if (jsonFlag) {
+		const json =
+			expandedTargets.length === 1 && failures.length === 0
+				? scanned[0]?.report
+				: { reports: scanned, failures };
+		console.log(JSON.stringify(json, null, 2));
+	} else {
+		for (const item of scanned) {
+			if (expandedTargets.length > 1) {
+				console.log(`\n${COLORS.gray}${item.target}${COLORS.reset}`);
+			}
+			printReport(item.report);
+		}
+
+		if (failures.length > 0) {
+			console.log(`\n${COLORS.bold}${COLORS.red}Scan failures (${failures.length}):${COLORS.reset}`);
+			for (const f of failures) {
+				console.log(`  ${COLORS.red}✖${COLORS.reset} ${f.target}`);
+				console.log(`    ${COLORS.gray}${f.error}${COLORS.reset}`);
+			}
+		}
+	}
+
+	if (reportFlag) {
+		if (reportPath && expandedTargets.length !== 1) {
+			throw new Error("--report <path> can only be used when scanning a single target");
+		}
+
+		const used = new Map<string, number>();
+		for (let i = 0; i < scanned.length; i += 1) {
+			const item = scanned[i];
+			if (!item) continue;
+
+			const isUrl = item.target.startsWith("http://") || item.target.startsWith("https://");
+			const baseName = isUrl ? `skill-${i + 1}` : basename(item.target, ".md");
+			const defaultPath = `${baseName}-trust-report.md`;
+			const candidate = reportPath || defaultPath;
+
+			const seen = used.get(candidate) ?? 0;
+			used.set(candidate, seen + 1);
+			const outPath = seen === 0 ? candidate : candidate.replace(/\.md$/i, `-${seen + 1}.md`);
+
+			const markdown = generateMarkdownReport(item.report, item.target);
+			await writeFile(outPath, markdown, "utf-8");
+			if (!jsonFlag) console.log(`\n${COLORS.green}Report saved to: ${outPath}${COLORS.reset}`);
+		}
+	}
+
+	if (sarifFlag) {
+		const outPath = sarifPath || "agentverus-scanner.sarif";
+		const sarif = buildSarifLog(scanned, failures);
+		await writeFile(outPath, JSON.stringify(sarif, null, 2), "utf-8");
+		if (!jsonFlag) console.log(`\n${COLORS.green}SARIF saved to: ${outPath}${COLORS.reset}`);
+	}
+
+	const scannedReports: TrustReport[] = scanned.map((s) => s.report);
+
+	// Exit codes:
+	// - 2: scan failed for one or more targets (incomplete results)
+	// - 1: scan completed but policy failed
+	// - 0: pass
+	if (failures.length > 0) process.exit(2);
+
+	if (failOnSeverity && shouldFailOnSeverity(scannedReports, failOnSeverity)) process.exit(1);
+
+	const badgeFailed = scannedReports.some((r) => r.badge === "suspicious" || r.badge === "rejected");
+	process.exit(badgeFailed ? 1 : 0);
 }
 
 main().catch((err) => {
-	console.error("Fatal error:", err);
+	const message = err instanceof Error ? err.message : String(err);
+	console.error("Fatal error:", message);
 	process.exit(1);
 });
