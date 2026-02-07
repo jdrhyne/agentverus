@@ -14,6 +14,10 @@ import { homeApp } from "./web/pages/home.js";
 import { registryApp } from "./web/pages/registry.js";
 import { submitApp } from "./web/pages/submit.js";
 import { docsApp } from "./web/pages/docs.js";
+import { statsApp } from "./web/pages/stats.js";
+
+// Crypto
+import { getPublicKeyPem } from "./lib/crypto.js";
 
 // Middleware
 import { rateLimit } from "./api/middleware/rateLimit.js";
@@ -37,11 +41,19 @@ app.route("/api/v1", skillsApp);
 app.route("/api/v1", badgeApp);
 app.route("/api/v1", certifyApp);
 
+// Well-known endpoints
+app.get("/.well-known/agenttrust-public-key", (c) => {
+	const publicKey = getPublicKeyPem();
+	c.header("Content-Type", "application/x-pem-file");
+	return c.text(publicKey);
+});
+
 // Web routes
 app.route("", homeApp);
 app.route("", registryApp);
 app.route("", submitApp);
 app.route("", docsApp);
+app.route("", statsApp);
 
 // Global error handler
 app.onError(errorHandler);
