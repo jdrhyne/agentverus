@@ -2,44 +2,57 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 
-const app = new Hono();
+// API routes
+import { scanApp } from "./api/v1/scan.js";
+import { trustApp } from "./api/v1/trust.js";
+import { skillsApp } from "./api/v1/skills.js";
+import { badgeApp } from "./api/v1/badge.js";
+import { certifyApp } from "./api/v1/certify.js";
+
+// Web pages
+import { homeApp } from "./web/pages/home.js";
+import { registryApp } from "./web/pages/registry.js";
+import { submitApp } from "./web/pages/submit.js";
+import { docsApp } from "./web/pages/docs.js";
 
 // Middleware
+import { rateLimit } from "./api/middleware/rateLimit.js";
+import { errorHandler } from "./api/middleware/errors.js";
+
+const app = new Hono();
+
+// Global middleware
 app.use("*", cors());
 app.use("*", logger());
+app.use("/api/*", rateLimit({ windowMs: 60_000, max: 60 }));
 
-// Health check
-app.get("/health", (c) => {
-	return c.json({ status: "ok", version: "0.1.0" });
-});
+// Health checks
+app.get("/health", (c) => c.json({ status: "ok", version: "0.1.0" }));
+app.get("/api/v1/health", (c) => c.json({ status: "ok", version: "0.1.0" }));
 
-// API v1 health
-app.get("/api/v1/health", (c) => {
-	return c.json({ status: "ok", version: "0.1.0" });
-});
+// API v1 routes
+app.route("/api/v1", scanApp);
+app.route("/api/v1", trustApp);
+app.route("/api/v1", skillsApp);
+app.route("/api/v1", badgeApp);
+app.route("/api/v1", certifyApp);
+
+// Web routes
+app.route("", homeApp);
+app.route("", registryApp);
+app.route("", submitApp);
+app.route("", docsApp);
 
 // Global error handler
-app.onError((err, c) => {
-	console.error(`[ERROR] ${err.message}`, err.stack);
-	const status = "statusCode" in err ? (err.statusCode as number) : 500;
-	return c.json(
-		{
-			error: {
-				code: "INTERNAL_ERROR",
-				message:
-					process.env.NODE_ENV === "production"
-						? "An internal error occurred"
-						: err.message,
-			},
-		},
-		status as 500,
-	);
-});
+app.onError(errorHandler);
 
-// 404 handler for API
+// 404 handlers
 app.notFound((c) => {
 	if (c.req.path.startsWith("/api/")) {
-		return c.json({ error: { code: "NOT_FOUND", message: "Endpoint not found" } }, 404);
+		return c.json(
+			{ error: { code: "NOT_FOUND", message: "Endpoint not found" } },
+			404,
+		);
 	}
 	return c.text("Not Found", 404);
 });
