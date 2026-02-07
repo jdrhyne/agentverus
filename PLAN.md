@@ -1291,3 +1291,74 @@ ADMIN_API_KEY=admin-secret-key
 ---
 
 *This plan is designed to be executed task-by-task in Codex CLI. Each task is atomic, has clear acceptance criteria, and includes a prompt optimized for Codex execution. Total estimated build time: 14 days.*
+
+---
+
+## ADDENDUM: Revised Monetization Strategy (Feb 6, 2026)
+
+> **Decision:** Free-first authority building. No payment integration until adoption is proven.
+
+### What Changed
+
+The original plan monetized via $99/$499 per-skill certification from publishers. This is backwards — skill builders won't pay for certification from an unknown provider. Revenue comes from the demand side (platforms and enterprises checking trust), not the supply side (publishers being rated).
+
+### Revised Sprint Priorities
+
+**Sprint 3 is simplified:** Remove Stripe/payment from Sprint 3. Keep badges, attestation, and the submission flow — but make it FREE. The certification flow becomes: submit skill → scan runs → badge + attestation issued → listed in registry. No payment wall.
+
+**Sprint 4 is restructured:** Instead of payments + launch, it becomes **Launch + API Key Management**:
+- Landing page (keep)
+- API documentation (keep)
+- API key self-service (free tier: 100 scans/day)
+- Deployment (keep)
+- Kill: Stripe integration, pricing page, payment webhooks
+
+**Sprint 5 is now the MOST IMPORTANT sprint:** Bulk scan + research publication IS the launch. "We scanned 500 skills. 15% are dangerous. Here's the data." This is the marketing.
+
+### Revised Monetization Phases
+
+| Phase | Timeline | Revenue | What |
+|-------|----------|---------|------|
+| **1. Authority** | Month 1-3 | $0 | Free scans, free badges, bulk scan everything. Build the database. Publish "State of Agent Skill Security" report. |
+| **2. Platform API** | Month 3-6 | $1-5K/mo | Marketplace integrations (ClawHub, SkillsMP, etc.) pay for API access to show trust badges on listings. $299-999/mo per platform. |
+| **3. Enterprise** | Month 6-12 | $5-20K/mo | Companies monitoring installed skills across their agent fleets. Team $99/mo, Business $499/mo, Enterprise custom. |
+| **4. Premium Cert** | Month 12+ | Upside | Enterprise publishers needing compliance badges for procurement. $999-2,999/skill with human review. |
+
+### Tasks Removed from Sprints 3-4 (Deferred to Phase 2)
+- Task 3.3: Certification Submission Flow → becomes FREE submission, no Stripe
+- Task 3.5: Email Notifications → simplified (no payment emails)
+- Task 3.6: Stripe Webhooks → removed entirely
+- Task 4.1: Stripe Integration → removed entirely  
+- Task 4.3: Pricing Page → removed (no pricing yet)
+
+### Tasks Added
+- **Task 3.3 (revised):** Free Skill Submission Flow — submit URL or paste content → scan runs → results displayed → badge issued → listed in registry. No payment. No tiers.
+- **Task 4.1 (revised):** API Key Self-Service — register for free API key (100 scans/day). No payment required. Email verification only.
+- **Task 4.3 (revised):** Social proof / stats page — live dashboard of total skills scanned, threat distribution, top findings. Public transparency builds trust.
+
+### Files Removed from Project Structure
+- `src/payments/stripe.ts` → deferred
+- `src/payments/plans.ts` → deferred
+- `src/api/v1/webhook.ts` → deferred
+- `src/web/pages/pricing.tsx` → deferred
+
+### The Flywheel (Revenue-Free Phase)
+```
+Free scans → Big database → Authority/brand
+    ↓                           ↓
+Publish research           Marketplaces notice
+    ↓                           ↓
+Media/community attention  "We want badges on our listings"
+    ↓                           ↓
+More skill publishers      Platform API contracts (Phase 2 revenue)
+submit voluntarily              ↓
+    ↓                      Enterprise discovers via badges
+    └── DATA COMPOUNDS ──→ Enterprise monitoring contracts (Phase 3 revenue)
+```
+
+**Success metrics for Phase 1 (free period):**
+- 500+ skills scanned
+- 50+ voluntary submissions from publishers
+- 1 platform integration conversation
+- "State of Agent Skill Security" report gets 10K+ views
+- AgentTrust badges appearing in 20+ skill READMEs organically
