@@ -194,7 +194,7 @@ export function parseSkill(content: string): ParsedSkill {
 		}
 	}
 
-	if (!description) {
+	if (!description || description.trim().length < 10) {
 		warnings.push("No description found in skill file");
 	}
 
