@@ -59,6 +59,28 @@ describe("analyzeContent", () => {
 		expect(descFindings.length).toBe(1);
 	});
 
+	it("should detect base64 obfuscation", async () => {
+		const skill = parseSkill(loadFixture("obfuscated-skill.md"));
+		const result = await analyzeContent(skill);
+
+		const b64Findings = result.findings.filter(
+			(f) => f.title.toLowerCase().includes("base64"),
+		);
+		expect(b64Findings.length).toBeGreaterThan(0);
+	});
+
+	it("should detect hardcoded API keys", async () => {
+		const skill = parseSkill(loadFixture("obfuscated-skill.md"));
+		const result = await analyzeContent(skill);
+
+		const keyFindings = result.findings.filter(
+			(f) =>
+				f.title.toLowerCase().includes("api key") ||
+				f.title.toLowerCase().includes("secret"),
+		);
+		expect(keyFindings.length).toBeGreaterThan(0);
+	});
+
 	it("should note missing safety boundaries", async () => {
 		const skill = parseSkill(loadFixture("excessive-permissions.md"));
 		const result = await analyzeContent(skill);

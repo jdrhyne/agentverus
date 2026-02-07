@@ -41,3 +41,7 @@ npm-debug.log*
 data/aggregate-stats.json
 data/report.md
 data/skill-urls.txt
+
+# Build logs
+.build-logs/
+AGENTS.md

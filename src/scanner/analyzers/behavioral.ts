@@ -152,6 +152,54 @@ export async function analyzeBehavioral(
 		}
 	}
 
+	// Prerequisite trap detection — ClawHavoc pattern: curl|sh or download-and-execute
+	const prerequisiteTrapPatterns = [
+		/curl\s+.*\|\s*(?:sh|bash|zsh)/i,
+		/curl\s+.*-[oO]\s+.*&&\s*(?:chmod|\.\/)/i,
+	];
+	for (const trapRegex of prerequisiteTrapPatterns) {
+		const trapMatch = content.match(trapRegex);
+		if (trapMatch) {
+			const lineNumber = content.slice(0, content.indexOf(trapMatch[0])).split("\n").length;
+			score = Math.max(0, score - 25);
+			findings.push({
+				id: `BEH-PREREQ-TRAP-${findings.length + 1}`,
+				category: "behavioral",
+				severity: "high",
+				title: "Suspicious install pattern: download and execute from remote URL",
+				description:
+					"The skill instructs users to download and execute code from a remote URL, a common supply-chain attack vector.",
+				evidence: trapMatch[0].slice(0, 200),
+				lineNumber,
+				deduction: 25,
+				recommendation:
+					"Remove curl-pipe-to-shell patterns. Provide dependencies through safe, verifiable channels.",
+				owaspCategory: "ASST-02",
+			});
+			break;
+		}
+	}
+
+	// Combined exfiltration flow — credential access + network capability
+	const credentialPatterns = /(?:API_KEY|SECRET|~\/\.config|\.env\b|credentials)/i;
+	const networkPatterns = /(?:webhook\.site|requests\.post|curl\s+-X\s+POST|fetch\(|https?:\/\/)/i;
+	if (credentialPatterns.test(content) && networkPatterns.test(content)) {
+		score = Math.max(0, score - 25);
+		findings.push({
+			id: `BEH-EXFIL-FLOW-${findings.length + 1}`,
+			category: "behavioral",
+			severity: "high",
+			title: "Potential data exfiltration: skill accesses credentials and has network capability",
+			description:
+				"The skill references both credential/secret access patterns and network endpoints, suggesting a possible data exfiltration flow.",
+			evidence: "Credential and network patterns both present in skill content",
+			deduction: 25,
+			recommendation:
+				"Separate credential access from network operations. If both are needed, declare them explicitly and justify.",
+			owaspCategory: "ASST-06",
+		});
+	}
+
 	// Apply declared permissions — downgrade matching findings
 	const adjustedFindings = applyDeclaredPermissions(findings, skill.declaredPermissions);
 

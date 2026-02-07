@@ -168,6 +168,86 @@ export async function analyzeContent(
 		}
 	}
 
+	// Check for large base64 blobs (obfuscation)
+	const base64BlobRegex = /[A-Za-z0-9+/]{100,}={0,2}/g;
+	let base64Match: RegExpExecArray | null;
+	while ((base64Match = base64BlobRegex.exec(content)) !== null) {
+		// Skip pure hex strings
+		if (/^[a-f0-9]+$/i.test(base64Match[0])) continue;
+		const lineNumber = content.slice(0, base64Match.index).split("\n").length;
+		score = Math.max(0, score - 15);
+		findings.push({
+			id: `CONT-B64-${findings.length + 1}`,
+			category: "content",
+			severity: "medium",
+			title: "Large base64 encoded string (possible obfuscation)",
+			description:
+				"A large base64-encoded string was detected that may be used to hide malicious payloads.",
+			evidence: base64Match[0].slice(0, 80) + "...",
+			lineNumber,
+			deduction: 15,
+			recommendation:
+				"Replace base64-encoded content with plaintext or explain its purpose. Obfuscation raises security concerns.",
+			owaspCategory: "ASST-10",
+		});
+		break; // One finding is enough
+	}
+
+	// Check for hex blob obfuscation
+	const hexBlobRegex = /(?:\\x[0-9a-fA-F]{2}){20,}/g;
+	let hexMatch: RegExpExecArray | null;
+	while ((hexMatch = hexBlobRegex.exec(content)) !== null) {
+		const lineNumber = content.slice(0, hexMatch.index).split("\n").length;
+		score = Math.max(0, score - 15);
+		findings.push({
+			id: `CONT-HEX-${findings.length + 1}`,
+			category: "content",
+			severity: "medium",
+			title: "Hex-encoded blob (possible obfuscation)",
+			description:
+				"A hex-encoded blob was detected that may be used to hide malicious payloads.",
+			evidence: hexMatch[0].slice(0, 80) + "...",
+			lineNumber,
+			deduction: 15,
+			recommendation:
+				"Replace hex-encoded content with plaintext or explain its purpose.",
+			owaspCategory: "ASST-10",
+		});
+		break;
+	}
+
+	// Check for hardcoded API keys and secrets
+	const apiKeyPatterns = [
+		{ regex: /(?:AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}/g, name: "AWS key" },
+		{ regex: /ghp_[A-Za-z0-9]{36}/g, name: "GitHub token" },
+		{ regex: /(?:sk|pk)_(?:live|test)_[A-Za-z0-9]{24,}/g, name: "Stripe key" },
+		{ regex: /(?:api[_-]?key|secret[_-]?key|access[_-]?token)\s*[:=]\s*["'][A-Za-z0-9]{32,}["']/gi, name: "Generic API key" },
+	];
+	for (const keyPattern of apiKeyPatterns) {
+		let keyMatch: RegExpExecArray | null;
+		while ((keyMatch = keyPattern.regex.exec(content)) !== null) {
+			const matchText = keyMatch[0];
+			// Skip example/placeholder values
+			if (/EXAMPLE|example|placeholder/i.test(matchText)) continue;
+			const lineNumber = content.slice(0, keyMatch.index).split("\n").length;
+			score = Math.max(0, score - 40);
+			findings.push({
+				id: `CONT-SECRET-${findings.length + 1}`,
+				category: "content",
+				severity: "critical",
+				title: "Hardcoded API key or secret detected",
+				description: `A hardcoded ${keyPattern.name} was found. Secrets must never be embedded in skill files.`,
+				evidence: matchText.slice(0, 20) + "..." + matchText.slice(-4),
+				lineNumber,
+				deduction: 40,
+				recommendation:
+					"Remove all hardcoded secrets. Use environment variables or secure secret management.",
+				owaspCategory: "ASST-05",
+			});
+			break;
+		}
+	}
+
 	// Check for missing description
 	if (!skill.description || skill.description.trim().length < 10) {
 		score = Math.max(0, score - 5);

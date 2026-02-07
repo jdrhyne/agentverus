@@ -97,6 +97,45 @@ const INJECTION_PATTERNS: readonly InjectionPattern[] = [
 		recommendation:
 			"Remove social engineering instructions. Skills must be transparent about their actions.",
 	},
+	{
+		name: "Concealment directive",
+		patterns: [
+			/(?:do\s+not|don'?t)\s+(?:tell|inform|mention|notify)\s+(?:the\s+)?user/i,
+			/(?:hide|conceal)\s+(?:this|that)\s+(?:action|operation|step)/i,
+			/(?:keep|make)\s+(?:this|that)\s+(?:secret|hidden)/i,
+			/don'?t\s+mention\s+you\s+used\s+this\s+skill/i,
+		],
+		severity: "high",
+		deduction: 25,
+		owaspCategory: "ASST-01",
+		recommendation:
+			"Remove concealment directives. Skills must be transparent about all operations performed.",
+	},
+	{
+		name: "Unrestricted mode activation",
+		patterns: [
+			/you\s+are\s+now\s+in\s+(?:unrestricted|debug|developer|admin|god|jailbreak)\s+mode/i,
+			/(?:enter|enable|activate)\s+(?:unrestricted|debug|developer)\s+mode/i,
+			/disable\s+(?:all\s+)?(?:safety|security|content|ethical)\s+(?:filters|checks|guidelines)/i,
+		],
+		severity: "high",
+		deduction: 25,
+		owaspCategory: "ASST-01",
+		recommendation:
+			"Remove unrestricted mode activation attempts. Skills must not bypass agent safety mechanisms.",
+	},
+	{
+		name: "System prompt reveal",
+		patterns: [
+			/reveal\s+(?:your|the)\s+system\s+(?:prompt|instructions)/i,
+			/(?:show|display|output)\s+(?:me\s+)?(?:your|the)\s+(?:system|initial)\s+(?:prompt|config)/i,
+		],
+		severity: "medium",
+		deduction: 15,
+		owaspCategory: "ASST-01",
+		recommendation:
+			"Remove system prompt reveal attempts. Skills must not try to extract agent configuration.",
+	},
 ] as const;
 
 /** Detect hidden instructions in HTML comments */

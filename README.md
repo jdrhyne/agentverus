@@ -1,144 +1,181 @@
 # AgentVerus
 
-**Trust, but verify.** The trust certification service for AI agent skills.
+**Trust, but verify.** Security certification for AI agent skills.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/tests-72%20passing-brightgreen)](.)
 
 ---
 
-## What is AgentVerus?
+## The Problem
 
-AgentVerus scans, audits, and certifies AI agent skills. It analyzes skill files (SKILL.md) for security threats, behavioral risks, and compliance issues — then produces a transparent trust score and embeddable badge.
+Agent skills are the new npm packages — open publishing, dependency chains, and zero vetting. Security researchers have found **341 malicious skills** on ClawHub alone (Koi Security), with attacks ranging from credential theft to reverse shells. Cisco's research shows **26% contain at least one vulnerability**.
 
-**Why?** Gen Digital found that **15% of OpenClaw skills contain malicious instructions**. Agent skills are the new npm packages — open publishing, dependency chains, and supply chain risk. AgentVerus is the trust layer the agentic web is missing.
+Skills are just markdown files with instructions. But a skill isn't a feature — **it's a behavior**. When you install one, you're granting an AI agent new capabilities with access to your files, credentials, and APIs.
 
-## How It Works
+## What AgentVerus Does
 
-1. **Submit** — Provide a skill URL or paste SKILL.md content
-2. **Scan** — Our engine analyzes for 10 categories of security threats (the ASST taxonomy)
-3. **Score** — Get a transparent trust score (0-100) with detailed findings
-4. **Certify** — Paid certification gets you a verified badge and cryptographic attestation
+AgentVerus scans skill files and produces two independent trust signals:
 
-## Trust Score
+### 🔍 Technical Badge — Is this skill safe?
 
-Every skill receives a trust score from 0-100, composed of five analysis categories:
+Static analysis across 5 categories (10 ASST threat types):
 
-| Category | Weight | What It Checks |
-|----------|--------|----------------|
-| **Injection Detection** | 30% | Hidden instructions, prompt injection, social engineering |
-| **Permission Analysis** | 25% | Permission scope, necessity, risk level |
-| **Dependency Analysis** | 20% | External URLs, downloads, dynamic code execution |
-| **Behavioral Risk** | 15% | Autonomous actions, system modification, scope boundaries |
-| **Content Safety** | 10% | Safety boundaries, documentation, harmful content |
+| Category | Weight | Detects |
+|----------|--------|---------|
+| Injection | 30% | Prompt injection, concealment directives, system override attempts |
+| Permissions | 25% | Credential access, excessive privileges, undeclared capabilities |
+| Dependencies | 20% | Suspicious URLs, remote code downloads, dynamic execution |
+| Behavioral | 15% | System modification, autonomous actions, scope violations |
+| Content | 10% | Missing safety boundaries, obfuscation, hardcoded secrets |
 
-Grades: **A+** (95-100) → **F** (<60). Every deduction traces to a specific finding.
+**Tiers:** 🟢 CERTIFIED (≥90) · 🟡 CONDITIONAL (75-89) · 🟠 SUSPICIOUS (50-74) · 🔴 REJECTED (<50)
 
-## ASST — Agent Skill Security Threats
+### 📈 Adoption Badge — Is this skill real?
 
-Our OWASP-style taxonomy for agent skill security:
+Aggregated usage signals from skills.sh, GitHub, and ClawHub:
+
+| Tier | Score | Meaning |
+|------|-------|---------|
+| 🥇 WIDELY_USED | 70-100 | 10K+ installs, actively maintained |
+| 🔵 GAINING_ADOPTION | 40-69 | 1K-10K installs, growing |
+| 🟢 EARLY | 10-39 | 100-1K installs, new but present |
+| ⬜ NOT_ADOPTED | 0-9 | <100 installs |
+
+**Formula:** Popularity × 0.40 + Freshness × 0.35 + Maturity × 0.25
+
+## Declared Permissions
+
+AgentVerus rewards transparency. Skills can declare what they need in YAML frontmatter:
+
+```yaml
+---
+name: my-skill
+permissions:
+  - credential_access: "API_KEY for authentication"
+  - network: "HTTPS calls to api.example.com"
+  - file_write: "Output files to working directory"
+---
+```
+
+**Declared + Detected** = info (0 deduction) — you told users what you do.
+**Undeclared + Detected** = full penalty — you're hiding something.
+**Declared + Not Detected** = low (2pt deduction) — over-declared but honest.
+
+## Quick Start
+
+```bash
+# Clone and install
+git clone https://github.com/jdrhyne/agentverus.git
+cd agentverus && pnpm install
+
+# Scan a skill
+pnpm scan path/to/SKILL.md
+
+# Scan with JSON output
+pnpm scan path/to/SKILL.md --json
+
+# Bulk scan a directory
+pnpm bulk-scan path/to/skills/
+```
+
+## ASST Taxonomy
+
+Our OWASP-style classification for agent skill threats:
 
 | ID | Threat | Example |
 |----|--------|---------|
-| ASST-01 | Instruction Injection | "Ignore all previous instructions..." |
-| ASST-02 | Data Exfiltration | Hidden POST to external endpoint |
-| ASST-03 | Privilege Escalation | Calculator requesting exec permissions |
-| ASST-04 | Dependency Hijacking | Dynamic script downloads from pastebin |
-| ASST-05 | Credential Harvesting | Reading ~/.ssh/id_rsa |
-| ASST-06 | Prompt Injection Relay | Injecting prompts into downstream LLMs |
-| ASST-07 | Deceptive Functionality | Mismatch between stated and actual purpose |
-| ASST-08 | Excessive Permissions | Spell checker requesting all permissions |
-| ASST-09 | Missing Safety Boundaries | No explicit constraints on behavior |
-| ASST-10 | Obfuscation | Base64-encoded malicious instructions |
+| ASST-01 | Instruction Injection | "Ignore previous instructions", concealment directives |
+| ASST-02 | Data Exfiltration | Credential harvest → webhook POST |
+| ASST-03 | Privilege Escalation | Weather skill requesting exec permissions |
+| ASST-04 | Dependency Hijacking | `curl \| sh` from unknown domains |
+| ASST-05 | Credential Harvesting | Reading ~/.ssh/id_rsa, hardcoded API keys |
+| ASST-06 | Prompt Injection Relay | Injecting instructions into downstream LLMs |
+| ASST-07 | Deceptive Functionality | Description doesn't match actual behavior |
+| ASST-08 | Excessive Permissions | Spell checker requesting all tool access |
+| ASST-09 | Missing Safety Boundaries | No explicit constraints on agent behavior |
+| ASST-10 | Obfuscation | Base64/hex encoded payloads, XOR ciphers |
 
-## API
+## Example Output
 
-```bash
-# Scan a skill
-curl -X POST https://agentverus.ai/api/v1/skill/scan \
-  -H "Content-Type: application/json" \
-  -d '{"url": "https://github.com/user/repo/blob/main/SKILL.md"}'
+```
+AgentVerus Scanner v0.1.0
+────────────────────────────────────────────────────────────
 
-# Get trust report
-curl https://agentverus.ai/api/v1/skill/{id}/trust
+Overall Score:  98/100
+Badge:          CERTIFIED
+Format:         openclaw
+Duration:       3ms
 
-# Get embeddable badge
-# Use in markdown: ![AgentVerus](https://agentverus.ai/api/v1/skill/{id}/badge)
+Category Scores:
+  injection       ██████████████████████████████████████████████████ 100/100 (weight: 30%)
+  permissions     ██████████████████████████████████████████████████ 100/100 (weight: 25%)
+  dependencies    ██████████████████████████████████████████████████ 100/100 (weight: 20%)
+  behavioral      ██████████████████████████████████████████████████ 100/100 (weight: 15%)
+  content         ████████████████████████████████████████░░░░░░░░░░  80/100 (weight: 10%)
 
-# Search the registry
-curl "https://agentverus.ai/api/v1/skills?q=weather&grade=A"
+Findings (1):
+  LOW (1)
+    ● No explicit safety boundaries
 ```
 
-## Certification Tiers
+## How We Compare
 
-| Tier | Price | Includes |
-|------|-------|----------|
-| **Free Scan** | $0 | Trust report + score (no badge) |
-| **Basic** | $99/skill | Trust badge + cryptographic attestation + registry listing |
-| **Enterprise** | $499/skill | Everything in Basic + detailed export + priority support |
-
-## Badge
-
-Embed a trust badge in your README:
-
-```markdown
-[![AgentVerus Score](https://agentverus.ai/api/v1/skill/{id}/badge)](https://agentverus.ai/skill/{id})
-```
+| | AgentVerus | Cisco Skill Scanner | Alice Caterpillar | Koi ClawDex |
+|---|---|---|---|---|
+| **Type** | Trust platform | Scan tool | Scan tool | Database lookup |
+| **Technical scan** | ✅ 5 analyzers | ✅ YAML/YARA + AST | ✅ Pattern-based | ❌ IOC matching |
+| **Adoption signals** | ✅ skills.sh + GitHub | ❌ | ❌ | ❌ |
+| **Declared permissions** | ✅ Transparency rewarded | ❌ | ❌ | ❌ |
+| **Dual badges** | ✅ Technical + Adoption | ❌ | ❌ Letter grade | ❌ |
+| **Registry** | ✅ (planned) | ❌ | ❌ | ✅ Malicious only |
+| **Cross-platform** | ✅ Any SKILL.md | ✅ Codex/Cursor | ✅ OpenClaw-focused | ❌ ClawHub only |
 
 ## Tech Stack
 
 - **TypeScript** / Node.js 22+
-- **Hono** — Web framework (API + server-rendered UI)
+- **Hono** — Web framework
 - **PostgreSQL** — Neon Serverless
-- **Drizzle ORM** — Type-safe database access
-- **Stripe** — Payments
-- **Vitest** — Testing
+- **Drizzle ORM** — Type-safe DB
+- **Vitest** — 72+ tests
 
 ## Development
 
 ```bash
-# Install dependencies
 pnpm install
-
-# Set up environment
 cp .env.example .env
-# Edit .env with your credentials
-
-# Push database schema
-pnpm db:push
-
-# Start dev server
-pnpm dev
-
-# Run tests
-pnpm test
-
-# Scan a local skill file
-pnpm scan path/to/SKILL.md
-
-# Lint & typecheck
-pnpm lint
-pnpm typecheck
+pnpm dev          # Start dev server
+pnpm test         # Run tests
+pnpm scan <file>  # Scan a skill
+pnpm lint         # Lint
+pnpm typecheck    # Type check
 ```
 
 ## Project Structure
 
 ```
 src/
-├── scanner/       # Skill Scanner Engine (core IP)
-│   ├── analyzers/ # Permission, injection, dependency, behavioral, content
-│   ├── parser.ts  # Multi-format SKILL.md parser
-│   └── scoring.ts # Score aggregation
-├── api/v1/        # REST API routes
-├── web/           # Server-rendered pages
-├── db/            # Database schema & client
-├── badges/        # SVG badge generation
-├── payments/      # Stripe integration
-└── email/         # Notification emails
+├── scanner/           # Core scan engine
+│   ├── analyzers/     # 5 analyzers + declared permissions matching
+│   ├── parser.ts      # Multi-format SKILL.md parser
+│   ├── scoring.ts     # Weighted score aggregation
+│   └── cli.ts         # CLI interface
+├── adoption/          # Adoption signal aggregation
+│   ├── skills-sh.ts   # skills.sh scraper
+│   ├── github.ts      # GitHub API client
+│   └── scoring.ts     # Adoption score calculator
+├── badges/            # SVG badge generators
+│   ├── generator.ts   # Technical trust badge
+│   └── adoption-generator.ts  # Adoption badge
+├── api/v1/            # REST API routes
+├── web/               # Landing pages (htmx)
+├── db/                # Database schema
+└── email/             # Notification system
+scripts/
+├── bulk-scan.ts       # Scan directories of skills
+├── collect-skills.ts  # Collect skills from registries
+└── generate-report.ts # Generate scan reports
 ```
-
-## Contributing
-
-See [PLAN.md](PLAN.md) for the full project plan with task-by-task breakdown.
 
 ## License
 
@@ -146,4 +183,4 @@ MIT
 
 ---
 
-Built by [Jonathan Rhyne](https://github.com/jonrhyme). Securing the agentic web, one skill at a time.
+Built by [Jonathan Rhyne](https://github.com/jdrhyne). Securing the agentic web, one skill at a time.
