@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 /**
- * Collect public skill URLs from GitHub.
- * Usage: pnpm collect-skills
+ * Collect public skill URLs from ClawHub and GitHub.
+ * Usage:
+ *   pnpm collect-skills
+ *   pnpm collect-skills --clawhub-only
+ *   pnpm collect-skills --github-only
  */
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -10,6 +13,7 @@ const OUTPUT_FILE = join(process.cwd(), "data", "skill-urls.txt");
 
 const GITHUB_API = "https://api.github.com";
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN ?? "";
+const CLAWHUB_API = "https://auth.clawdhub.com/api/v1";
 
 /** Search queries to find SKILL.md files */
 const SEARCH_QUERIES = [
@@ -39,6 +43,16 @@ interface GitHubSearchResponse {
 	readonly items: readonly GitHubSearchItem[];
 }
 
+interface ClawHubSkillListItem {
+	readonly slug: string;
+	readonly tags?: Readonly<Record<string, string>>;
+}
+
+interface ClawHubSkillListResponse {
+	readonly items: readonly ClawHubSkillListItem[];
+	readonly nextCursor?: string | null;
+}
+
 /** Make a GitHub API request */
 async function githubFetch(url: string): Promise<Response> {
 	const headers: Record<string, string> = {
@@ -62,6 +76,54 @@ async function githubFetch(url: string): Promise<Response> {
 	}
 
 	return response;
+}
+
+async function collectClawHub(): Promise<string[]> {
+	const urls: string[] = [];
+	let cursor: string | undefined;
+
+	while (true) {
+		const url = new URL(`${CLAWHUB_API}/skills`);
+		url.searchParams.set("limit", "100");
+		if (cursor) url.searchParams.set("cursor", cursor);
+
+		const response = await fetch(url, { headers: { Accept: "application/json" } });
+		if (!response.ok) {
+			console.error(`  ClawHub fetch failed: ${response.status} ${response.statusText}`);
+			break;
+		}
+
+		// Handle rate limiting if headers are present
+		const remainingRaw = response.headers.get("x-ratelimit-remaining");
+		const resetAtRaw = response.headers.get("x-ratelimit-reset");
+		const remaining = remainingRaw ? Number.parseInt(remainingRaw, 10) : Number.NaN;
+		const resetAt = resetAtRaw ? Number.parseInt(resetAtRaw, 10) : Number.NaN;
+
+		const data = (await response.json()) as ClawHubSkillListResponse;
+		for (const item of data.items) {
+			if (!item.slug) continue;
+			const dl = new URL(`${CLAWHUB_API}/download`);
+			dl.searchParams.set("slug", item.slug);
+			const latest = item.tags?.latest;
+			if (latest) dl.searchParams.set("version", latest);
+			urls.push(dl.toString());
+		}
+
+		if (!data.nextCursor) break;
+		cursor = data.nextCursor;
+
+		// If we're close to the limit, wait until reset.
+		if (!Number.isNaN(remaining) && remaining < 5 && !Number.isNaN(resetAt)) {
+			const waitMs = resetAt * 1000 - Date.now() + 1000;
+			console.log(`  ClawHub rate limit approaching, waiting ${Math.ceil(waitMs / 1000)}s...`);
+			await new Promise((resolve) => setTimeout(resolve, Math.max(waitMs, 1000)));
+		} else {
+			// Be nice.
+			await new Promise((resolve) => setTimeout(resolve, 250));
+		}
+	}
+
+	return urls;
 }
 
 /** Search GitHub code for SKILL.md files */
@@ -131,6 +193,15 @@ async function checkKnownRepos(): Promise<string[]> {
 }
 
 async function main(): Promise<void> {
+	const args = process.argv.slice(2);
+	const clawHubOnly = args.includes("--clawhub-only");
+	const githubOnly = args.includes("--github-only");
+
+	if (clawHubOnly && githubOnly) {
+		console.error("Error: Provide at most one of --clawhub-only or --github-only");
+		process.exit(1);
+	}
+
 	console.log(`\n📥 AgentVerus Skill URL Collector`);
 	console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
 	console.log(
@@ -139,19 +210,29 @@ async function main(): Promise<void> {
 
 	const allUrls: string[] = [];
 
-	// Search GitHub
-	for (const query of SEARCH_QUERIES) {
-		console.log(`  Searching: ${query}...`);
-		const urls = await searchGitHub(query);
-		console.log(`    Found ${urls.length} results`);
-		allUrls.push(...urls);
+	// Collect from ClawHub
+	if (!githubOnly) {
+		console.log("  Collecting from ClawHub...");
+		const clawHubUrls = await collectClawHub();
+		console.log(`    Found ${clawHubUrls.length} URLs from ClawHub`);
+		allUrls.push(...clawHubUrls);
 	}
 
-	// Check known repos
-	console.log(`  Checking known repositories...`);
-	const knownUrls = await checkKnownRepos();
-	console.log(`    Found ${knownUrls.length} from known repos`);
-	allUrls.push(...knownUrls);
+	// Search GitHub
+	if (!clawHubOnly) {
+		for (const query of SEARCH_QUERIES) {
+			console.log(`  Searching: ${query}...`);
+			const urls = await searchGitHub(query);
+			console.log(`    Found ${urls.length} results`);
+			allUrls.push(...urls);
+		}
+
+		// Check known repos
+		console.log(`  Checking known repositories...`);
+		const knownUrls = await checkKnownRepos();
+		console.log(`    Found ${knownUrls.length} from known repos`);
+		allUrls.push(...knownUrls);
+	}
 
 	// Deduplicate
 	const unique = [...new Set(allUrls.map((u) => u.toLowerCase()))];

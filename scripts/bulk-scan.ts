@@ -5,11 +5,12 @@
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { extname, join } from "node:path";
-import { scanSkill } from "../src/scanner/index.js";
+import { scanSkill, scanSkillFromUrl } from "../src/scanner/index.js";
 import type { BadgeTier, TrustReport } from "../src/scanner/types.js";
 
 const CONCURRENCY = 5;
 const DELAY_BETWEEN_BATCHES_MS = 100;
+const FETCH_TIMEOUT_MS = 30_000;
 
 interface ScanResult {
 	readonly path: string;
@@ -44,17 +45,12 @@ async function withConcurrency<T, R>(
 /** Scan a single skill file */
 async function scanOne(path: string): Promise<ScanResult> {
 	try {
-		let content: string;
 		if (path.startsWith("http")) {
-			const response = await fetch(path);
-			if (!response.ok) {
-				return { path, report: null, error: `HTTP ${response.status}` };
-			}
-			content = await response.text();
-		} else {
-			content = readFileSync(path, "utf-8");
+			const report = await scanSkillFromUrl(path, { timeout: FETCH_TIMEOUT_MS });
+			return { path, report, error: null };
 		}
 
+		const content = readFileSync(path, "utf-8");
 		const report = await scanSkill(content);
 		return { path, report, error: null };
 	} catch (err) {

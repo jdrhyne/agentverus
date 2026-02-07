@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { z } from "zod/v4";
 import { sha256 } from "../../lib/utils.js";
 import { scanSkill } from "../../scanner/index.js";
+import { fetchSkillContentFromUrl } from "../../scanner/source.js";
 import { ValidationError } from "../middleware/errors.js";
 
 const scanApp = new Hono();
@@ -34,12 +35,14 @@ scanApp.post("/skill/scan", async (c) => {
 	let skillUrl: string | undefined;
 
 	if (url) {
-		const response = await fetch(url);
-		if (!response.ok) {
-			throw new ValidationError(`Failed to fetch URL: ${response.status} ${response.statusText}`);
+		try {
+			const fetched = await fetchSkillContentFromUrl(url);
+			skillContent = fetched.content;
+			skillUrl = fetched.sourceUrl;
+		} catch (err) {
+			const message = err instanceof Error ? err.message : String(err);
+			throw new ValidationError(`Failed to fetch URL: ${message}`);
 		}
-		skillContent = await response.text();
-		skillUrl = url;
 	} else {
 		skillContent = content as string;
 	}

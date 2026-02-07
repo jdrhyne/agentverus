@@ -5,6 +5,7 @@ import { analyzeInjection } from "./analyzers/injection.js";
 import { analyzePermissions } from "./analyzers/permissions.js";
 import { parseSkill } from "./parser.js";
 import { aggregateScores } from "./scoring.js";
+import { fetchSkillContentFromUrl } from "./source.js";
 import type { Category, CategoryScore, ScanMetadata, ScanOptions, TrustReport } from "./types.js";
 import { SCANNER_VERSION } from "./types.js";
 
@@ -75,15 +76,7 @@ export async function scanSkill(content: string, _options?: ScanOptions): Promis
  * Fetches the content first, then runs the scanner.
  */
 export async function scanSkillFromUrl(url: string, options?: ScanOptions): Promise<TrustReport> {
-	const response = await fetch(url, {
-		signal: options?.timeout ? AbortSignal.timeout(options.timeout) : undefined,
-	});
-
-	if (!response.ok) {
-		throw new Error(`Failed to fetch skill from ${url}: ${response.status} ${response.statusText}`);
-	}
-
-	const content = await response.text();
+	const { content } = await fetchSkillContentFromUrl(url, options);
 	return scanSkill(content, options);
 }
 
