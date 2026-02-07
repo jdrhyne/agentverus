@@ -14,15 +14,35 @@ const CLAWHUB_DOWNLOAD_BASE = "https://auth.clawdhub.com/api/v1/download";
 function normalizeGithubUrl(url: URL): string {
 	if (url.hostname !== "github.com") return url.toString();
 
+	const parts = url.pathname.split("/").filter(Boolean);
+
 	// Convert GitHub "blob" URLs to raw content URLs.
 	// https://github.com/<owner>/<repo>/blob/<branch>/<path>
-	const parts = url.pathname.split("/").filter(Boolean);
 	if (parts.length >= 5 && parts[2] === "blob") {
 		const owner = parts[0] as string;
 		const repo = parts[1] as string;
 		const branch = parts[3] as string;
 		const path = parts.slice(4).join("/");
 		return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`;
+	}
+
+	// Convert GitHub "tree" (directory) URLs — append SKILL.md and fetch raw.
+	// https://github.com/<owner>/<repo>/tree/<branch>/<path>
+	if (parts.length >= 4 && parts[2] === "tree") {
+		const owner = parts[0] as string;
+		const repo = parts[1] as string;
+		const branch = parts[3] as string;
+		const dirPath = parts.slice(4).join("/");
+		const skillPath = dirPath ? `${dirPath}/SKILL.md` : "SKILL.md";
+		return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${skillPath}`;
+	}
+
+	// Bare repo URL: https://github.com/<owner>/<repo>
+	// Try to fetch SKILL.md from root of default branch.
+	if (parts.length === 2) {
+		const owner = parts[0] as string;
+		const repo = parts[1] as string;
+		return `https://raw.githubusercontent.com/${owner}/${repo}/main/SKILL.md`;
 	}
 
 	return url.toString();
