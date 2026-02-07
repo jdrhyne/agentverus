@@ -12,7 +12,7 @@ export const BaseLayout: FC<BaseLayoutProps> = ({ title, description, children }
 			<head>
 				<meta charset="UTF-8" />
 				<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-				<title>{title} | AgentTrust</title>
+				<title>{title} | AgentVerus</title>
 				{description && <meta name="description" content={description} />}
 				<script src="https://cdn.tailwindcss.com" />
 				<script src="https://unpkg.com/htmx.org@2.0.4" />
@@ -38,7 +38,7 @@ export const BaseLayout: FC<BaseLayoutProps> = ({ title, description, children }
 				<header class="border-b border-gray-800 bg-gray-900/50 backdrop-blur-sm sticky top-0 z-50">
 					<nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
 						<a href="/" class="text-xl font-bold text-white flex items-center gap-2">
-							<span class="text-2xl">🛡️</span> AgentTrust
+							<span class="text-2xl">🛡️</span> AgentVerus
 						</a>
 						<div class="flex items-center gap-6">
 							<a href="/registry" class="text-gray-300 hover:text-white transition">Registry</a>
@@ -58,11 +58,11 @@ export const BaseLayout: FC<BaseLayoutProps> = ({ title, description, children }
 
 				<footer class="border-t border-gray-800 bg-gray-900/30 py-8">
 					<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-						<p class="text-gray-500 text-sm">© 2026 AgentTrust. Trust, but verify.</p>
+						<p class="text-gray-500 text-sm">© 2026 AgentVerus. Trust, but verify.</p>
 						<div class="flex gap-6">
 							<a href="/docs" class="text-gray-500 hover:text-gray-300 text-sm transition">API</a>
 							<a
-								href="https://github.com/agenttrust"
+								href="https://github.com/agentverus"
 								class="text-gray-500 hover:text-gray-300 text-sm transition"
 							>
 								GitHub

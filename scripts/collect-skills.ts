@@ -43,7 +43,7 @@ interface GitHubSearchResponse {
 async function githubFetch(url: string): Promise<Response> {
 	const headers: Record<string, string> = {
 		Accept: "application/vnd.github.v3+json",
-		"User-Agent": "AgentTrust-Collector",
+		"User-Agent": "AgentVerus-Collector",
 	};
 
 	if (GITHUB_TOKEN) {
@@ -132,7 +132,7 @@ async function checkKnownRepos(): Promise<string[]> {
 }
 
 async function main(): Promise<void> {
-	console.log(`\n📥 AgentTrust Skill URL Collector`);
+	console.log(`\n📥 AgentVerus Skill URL Collector`);
 	console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
 	console.log(`  GitHub token: ${GITHUB_TOKEN ? "configured" : "not set (limited to 10 req/min)"}\n`);
 

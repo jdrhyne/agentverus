@@ -123,7 +123,7 @@ document.getElementById('scan-form').addEventListener('submit', async (e) => {
 		// Badge embed
 		html += '<div class="mb-6 p-4 bg-gray-800 rounded-lg">';
 		html += '<p class="text-sm text-gray-400 mb-2">Embed this badge:</p>';
-		html += '<code class="text-xs text-green-400 break-all">![AgentTrust](' + window.location.origin + data.badgeUrl + ')</code>';
+		html += '<code class="text-xs text-green-400 break-all">![AgentVerus](' + window.location.origin + data.badgeUrl + ')</code>';
 		html += '</div>';
 
 		// Findings

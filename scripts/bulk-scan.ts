@@ -96,7 +96,7 @@ async function main(): Promise<void> {
 	const inputPath = args[0] as string;
 	const paths = getPaths(inputPath);
 
-	console.log(`\n🔍 AgentTrust Bulk Scanner`);
+	console.log(`\n🔍 AgentVerus Bulk Scanner`);
 	console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
 	console.log(`Found ${paths.length} skills to scan\n`);
 

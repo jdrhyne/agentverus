@@ -5,7 +5,7 @@ const statsApp = new Hono();
 
 statsApp.get("/stats", (c) => {
 	return c.html(
-		<BaseLayout title="Live Stats" description="Real-time statistics from AgentTrust scanning.">
+		<BaseLayout title="Live Stats" description="Real-time statistics from AgentVerus scanning.">
 			<section class="py-12 px-4">
 				<div class="max-w-7xl mx-auto">
 					<h1 class="text-3xl font-bold mb-3">Live Scanning Statistics</h1>

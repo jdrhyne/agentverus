@@ -66,7 +66,7 @@ export function createAttestation(data: AttestationData): string {
 	const attestation: SignedAttestation = {
 		data,
 		signature,
-		publicKeyId: "agenttrust-v1",
+		publicKeyId: "agentverus-v1",
 	};
 
 	return Buffer.from(JSON.stringify(attestation)).toString("base64url");

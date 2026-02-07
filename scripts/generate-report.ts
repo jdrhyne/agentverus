@@ -73,7 +73,7 @@ Key findings:
 
 ## Methodology
 
-AgentTrust uses the **ASST** (Agent Skill Security Threats) taxonomy — an OWASP-style categorization of 10 threat categories specific to AI agent skills.
+AgentVerus uses the **ASST** (Agent Skill Security Threats) taxonomy — an OWASP-style categorization of 10 threat categories specific to AI agent skills.
 
 Each skill is analyzed across 5 categories:
 1. **Permissions** (25%) — Are the requested permissions appropriate?
@@ -119,17 +119,17 @@ Our analysis found **${pct(stats.badgeDistribution.rejected + stats.badgeDistrib
 2. Request only the permissions actually needed
 3. Document all external dependencies
 4. Include error handling instructions
-5. Submit for AgentTrust certification at [agenttrust.dev](https://agenttrust.dev)
+5. Submit for AgentVerus certification at [agentverus.ai](https://agentverus.ai)
 
 ### For Skill Consumers
-1. Check the AgentTrust badge before installing any skill
+1. Check the AgentVerus badge before installing any skill
 2. Review permissions requested vs. stated purpose
 3. Avoid skills with REJECTED or SUSPICIOUS ratings
 4. Report suspicious skills to the community
 
 ---
 
-*Scan, audit, and certify AI agent skills at [agenttrust.dev](https://agenttrust.dev)*
+*Scan, audit, and certify AI agent skills at [agentverus.ai](https://agentverus.ai)*
 `;
 
 	writeFileSync(join(DATA_DIR, "report.md"), report);

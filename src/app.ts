@@ -42,7 +42,7 @@ app.route("/api/v1", badgeApp);
 app.route("/api/v1", certifyApp);
 
 // Well-known endpoints
-app.get("/.well-known/agenttrust-public-key", (c) => {
+app.get("/.well-known/agentverus-public-key", (c) => {
 	const publicKey = getPublicKeyPem();
 	c.header("Content-Type", "application/x-pem-file");
 	return c.text(publicKey);

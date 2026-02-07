@@ -54,7 +54,7 @@ function printReport(report: TrustReport): void {
 
 	console.log();
 	console.log(
-		`${COLORS.bold}AgentTrust Scanner v${report.metadata.scannerVersion}${COLORS.reset}`,
+		`${COLORS.bold}AgentVerus Scanner v${report.metadata.scannerVersion}${COLORS.reset}`,
 	);
 	console.log("─".repeat(60));
 

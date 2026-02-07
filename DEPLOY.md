@@ -17,7 +17,7 @@
 2. Required environment variables:
    - `DATABASE_URL` — Neon Postgres connection string
    - `NODE_ENV` — `production` for deployed environments
-   - `BASE_URL` — Your deployment URL (e.g., `https://agenttrust.dev`)
+   - `BASE_URL` — Your deployment URL (e.g., `https://agentverus.ai`)
 
 3. Optional:
    - `RESEND_API_KEY` — For email notifications
@@ -60,7 +60,7 @@ pnpm db:migrate
 
 2. Configure `wrangler.toml` (create if needed):
    ```toml
-   name = "agent-trust"
+   name = "agent-verus"
    main = "src/index.ts"
    compatibility_date = "2026-02-06"
    node_compat = true
@@ -78,7 +78,7 @@ pnpm db:migrate
    wrangler deploy
    ```
 
-## Custom Domain (agenttrust.dev)
+## Custom Domain (agentverus.ai)
 
 1. Add domain to Cloudflare dashboard
 2. Update DNS records to point to Workers

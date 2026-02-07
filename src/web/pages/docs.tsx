@@ -5,12 +5,12 @@ const docsApp = new Hono();
 
 docsApp.get("/docs", (c) => {
 	return c.html(
-		<BaseLayout title="API Documentation" description="REST API documentation for AgentTrust.">
+		<BaseLayout title="API Documentation" description="REST API documentation for AgentVerus.">
 			<section class="py-12 px-4">
 				<div class="max-w-4xl mx-auto">
 					<h1 class="text-3xl font-bold mb-3">API Documentation</h1>
 					<p class="text-gray-400 mb-8">
-						The AgentTrust REST API. Base URL: <code class="bg-gray-800 px-2 py-1 rounded text-certified">{c.req.url.split("/docs")[0]}/api/v1</code>
+						The AgentVerus REST API. Base URL: <code class="bg-gray-800 px-2 py-1 rounded text-certified">{c.req.url.split("/docs")[0]}/api/v1</code>
 					</p>
 
 					{/* Authentication */}
@@ -75,7 +75,7 @@ docsApp.get("/docs", (c) => {
 							body: null,
 							response: "SVG image (Content-Type: image/svg+xml)",
 							curl: `# Embed in markdown:
-![AgentTrust](${c.req.url.split("/docs")[0]}/api/v1/skill/SKILL_ID/badge)`,
+![AgentVerus](${c.req.url.split("/docs")[0]}/api/v1/skill/SKILL_ID/badge)`,
 						},
 						{
 							method: "GET",

@@ -15,7 +15,7 @@ describe("Cryptographic Attestation", () => {
 			scanDate: "2026-02-06T00:00:00Z",
 			certificationId: "test-cert-id",
 			expiresAt: "2027-02-06T00:00:00Z",
-			issuer: "AgentTrust",
+			issuer: "AgentVerus",
 		};
 
 		const attestation = createAttestation(data);
@@ -35,7 +35,7 @@ describe("Cryptographic Attestation", () => {
 			scanDate: "2026-02-06T00:00:00Z",
 			certificationId: "test-cert-id",
 			expiresAt: "2027-02-06T00:00:00Z",
-			issuer: "AgentTrust",
+			issuer: "AgentVerus",
 		};
 
 		const attestation = createAttestation(data);

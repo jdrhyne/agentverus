@@ -1,6 +1,6 @@
 # State of Agent Skill Security: We Scanned {TOTAL_SKILLS} AI Agent Skills. Here's What We Found.
 
-*Published: February 2026 | By AgentTrust Research*
+*Published: February 2026 | By AgentVerus Research*
 
 ---
 
@@ -110,34 +110,34 @@ The true "malicious with intent" rate (skills with ASST-01 or ASST-02 critical f
 1. **Add safety boundaries.** The single biggest improvement you can make.
 2. **Request minimal permissions.** Only what you actually use.
 3. **Document everything.** Description, error handling, output constraints.
-4. **Submit for scanning.** It's free at [agenttrust.dev](https://agenttrust.dev).
+4. **Submit for scanning.** It's free at [agentverus.ai](https://agentverus.ai).
 5. **Embed your badge.** Show users your skill is trustworthy.
 
 ### For Skill Consumers
 
-1. **Check the badge.** If a skill doesn't have an AgentTrust badge, be cautious.
+1. **Check the badge.** If a skill doesn't have an AgentVerus badge, be cautious.
 2. **Read the findings.** Every deduction is explained with evidence and recommendations.
 3. **Report suspicious skills.** Help us build a safer ecosystem.
 
 ### For Platforms
 
-1. **Integrate AgentTrust API.** Show trust scores on skill listings.
+1. **Integrate AgentVerus API.** Show trust scores on skill listings.
 2. **Require minimum scores.** Consider requiring CONDITIONAL or above for marketplace listing.
 3. **Contact us** for enterprise API access.
 
 ## Try It Yourself
 
-Scan any skill file for free at **[agenttrust.dev](https://agenttrust.dev)**.
+Scan any skill file for free at **[agentverus.ai](https://agentverus.ai)**.
 
 ```bash
 # Or use the API
-curl -X POST https://agenttrust.dev/api/v1/skill/scan \
+curl -X POST https://agentverus.ai/api/v1/skill/scan \
   -H "Content-Type: application/json" \
   -d '{"url": "https://raw.githubusercontent.com/.../SKILL.md"}'
 ```
 
 ---
 
-*AgentTrust is the trust certification service for AI agent skills. We scan, audit, and certify skills so you don't have to read every line of every SKILL.md yourself.*
+*AgentVerus is the trust certification service for AI agent skills. We scan, audit, and certify skills so you don't have to read every line of every SKILL.md yourself.*
 
 *Built by [Jonathan Rhyne](https://github.com/jrhyne). Data and methodology are open.*

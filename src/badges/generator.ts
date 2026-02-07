@@ -32,7 +32,7 @@ export function generateBadge(options: BadgeOptions): string {
 		score,
 		badge,
 		style = "flat",
-		label = "AgentTrust",
+		label = "AgentVerus",
 		certified = false,
 	} = options;
 

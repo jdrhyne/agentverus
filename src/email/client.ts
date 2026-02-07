@@ -22,7 +22,7 @@ export async function sendEmail(options: EmailOptions): Promise<void> {
 				"Content-Type": "application/json",
 			},
 			body: JSON.stringify({
-				from: "AgentTrust <trust@agenttrust.dev>",
+				from: "AgentVerus <hello@agentverus.ai>",
 				to: options.to,
 				subject: options.subject,
 				html: options.html,
@@ -61,7 +61,7 @@ export async function sendCertificationComplete(
 <!DOCTYPE html>
 <html>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #111; color: #eee;">
-	<h1 style="color: #fff;">🛡️ AgentTrust Scan Complete</h1>
+	<h1 style="color: #fff;">🛡️ AgentVerus Scan Complete</h1>
 	<p>Your skill <strong>"${data.skillName}"</strong> has been scanned.</p>
 
 	<div style="text-align: center; padding: 30px; background: #1a1a1a; border-radius: 12px; margin: 20px 0;">
@@ -71,18 +71,18 @@ export async function sendCertificationComplete(
 
 	<h2>Embed Your Badge</h2>
 	<p>Add this to your README:</p>
-	<pre style="background: #1a1a1a; padding: 12px; border-radius: 8px; overflow-x: auto; font-size: 12px;">![AgentTrust](${data.badgeUrl})</pre>
+	<pre style="background: #1a1a1a; padding: 12px; border-radius: 8px; overflow-x: auto; font-size: 12px;">![AgentVerus](${data.badgeUrl})</pre>
 
 	<p style="color: #888; font-size: 12px; margin-top: 30px;">
 		Certification ID: ${data.certificationId}<br>
-		<a href="https://agenttrust.dev" style="color: #2ECC40;">agenttrust.dev</a>
+		<a href="https://agentverus.ai" style="color: #2ECC40;">agentverus.ai</a>
 	</p>
 </body>
 </html>`;
 
 	await sendEmail({
 		to,
-		subject: `AgentTrust: ${data.skillName} scored ${data.score}/100 (${data.badge.toUpperCase()})`,
+		subject: `AgentVerus: ${data.skillName} scored ${data.score}/100 (${data.badge.toUpperCase()})`,
 		html,
 	});
 }
