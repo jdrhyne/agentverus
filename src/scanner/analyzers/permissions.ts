@@ -1,4 +1,5 @@
 import type { CategoryScore, Finding, ParsedSkill } from "../types.js";
+import { applyDeclaredPermissions } from "./declared-match.js";
 
 /** Permission risk tiers */
 const CRITICAL_PERMISSIONS = ["exec", "shell", "sudo", "admin"] as const;
@@ -143,21 +144,30 @@ export async function analyzePermissions(
 		});
 	}
 
+	// Apply declared permissions — downgrade matching findings
+	const adjustedFindings = applyDeclaredPermissions(findings, skill.declaredPermissions);
+
+	// Recalculate score based on adjusted deductions
+	let adjustedScore = 100;
+	for (const f of adjustedFindings) {
+		adjustedScore = Math.max(0, adjustedScore - f.deduction);
+	}
+
 	const summary =
-		findings.length === 0
+		adjustedFindings.length === 0
 			? "No permission concerns detected."
-			: `Found ${findings.length} permission-related findings. ${
-					findings.some((f) => f.severity === "critical")
+			: `Found ${adjustedFindings.length} permission-related findings. ${
+					adjustedFindings.some((f) => f.severity === "critical")
 						? "CRITICAL: Dangerous permissions detected."
-						: findings.some((f) => f.severity === "high")
+						: adjustedFindings.some((f) => f.severity === "high")
 							? "High-risk permissions detected that may not match the skill's purpose."
 							: "Minor permission concerns."
 				}`;
 
 	return {
-		score: Math.max(0, Math.min(100, score)),
+		score: Math.max(0, Math.min(100, adjustedScore)),
 		weight: 0.25,
-		findings,
+		findings: adjustedFindings,
 		summary,
 	};
 }

@@ -1,4 +1,5 @@
 import type { CategoryScore, Finding, ParsedSkill } from "../types.js";
+import { applyDeclaredPermissions } from "./declared-match.js";
 
 /** Trusted domain patterns */
 const TRUSTED_DOMAINS = [
@@ -166,21 +167,30 @@ export async function analyzeDependencies(
 		});
 	}
 
+	// Apply declared permissions — downgrade matching findings
+	const adjustedFindings = applyDeclaredPermissions(findings, skill.declaredPermissions);
+
+	// Recalculate score based on adjusted deductions
+	let adjustedScore = 100;
+	for (const f of adjustedFindings) {
+		adjustedScore = Math.max(0, adjustedScore - f.deduction);
+	}
+
 	const summary =
-		findings.length === 0
+		adjustedFindings.length === 0
 			? "No dependency concerns detected."
-			: `Found ${findings.length} dependency-related findings. ${
-					findings.some((f) => f.severity === "critical")
+			: `Found ${adjustedFindings.length} dependency-related findings. ${
+					adjustedFindings.some((f) => f.severity === "critical")
 						? "CRITICAL: Download-and-execute patterns detected."
-						: findings.some((f) => f.severity === "high")
+						: adjustedFindings.some((f) => f.severity === "high")
 							? "High-risk external dependencies detected."
 							: "Minor dependency concerns noted."
 				}`;
 
 	return {
-		score: Math.max(0, Math.min(100, score)),
+		score: Math.max(0, Math.min(100, adjustedScore)),
 		weight: 0.2,
-		findings,
+		findings: adjustedFindings,
 		summary,
 	};
 }

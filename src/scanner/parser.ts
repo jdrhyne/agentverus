@@ -1,4 +1,4 @@
-import type { ParsedSkill, SkillFormat } from "./types.js";
+import type { DeclaredPermission, ParsedSkill, SkillFormat } from "./types.js";
 
 /** URL extraction regex */
 const URL_REGEX = /https?:\/\/[^\s"'<>\])+,;]+/gi;
@@ -99,6 +99,44 @@ function extractListItems(text: string): string[] {
 	return items;
 }
 
+/** Parse declared permissions from YAML frontmatter block */
+function parseDeclaredPermissions(content: string): DeclaredPermission[] {
+	const match = content.match(/^---\s*\n([\s\S]*?)\n---/);
+	if (!match?.[1]) return [];
+
+	const lines = match[1].split("\n");
+	const permissions: DeclaredPermission[] = [];
+	let inPermissions = false;
+
+	for (const line of lines) {
+		const trimmed = line.trim();
+
+		// Detect start of permissions block
+		if (/^permissions:\s*$/.test(trimmed)) {
+			inPermissions = true;
+			continue;
+		}
+
+		// Detect end of permissions block (new top-level key)
+		if (inPermissions && /^\w[\w-]*:/.test(trimmed) && !trimmed.startsWith("- ")) {
+			break;
+		}
+
+		// Parse permission entries like: - credential_access: "justification"
+		if (inPermissions && trimmed.startsWith("- ")) {
+			const entryMatch = trimmed.match(/^-\s+(\w[\w_-]*):\s*["']?(.+?)["']?\s*$/);
+			if (entryMatch?.[1] && entryMatch[2]) {
+				permissions.push({
+					kind: entryMatch[1],
+					justification: entryMatch[2],
+				});
+			}
+		}
+	}
+
+	return permissions;
+}
+
 /** Detect skill format */
 function detectFormat(content: string): SkillFormat {
 	const hasFrontmatter = /^---\s*\n[\s\S]*?\n---/.test(content);
@@ -145,6 +183,7 @@ export function parseSkill(content: string): ParsedSkill {
 	let tools: string[] = [];
 	let permissions: string[] = [];
 	let dependencies: string[] = [];
+	const declaredPermissions = parseDeclaredPermissions(content);
 
 	if (format === "openclaw") {
 		const fm = parseFrontmatter(content);
@@ -204,6 +243,7 @@ export function parseSkill(content: string): ParsedSkill {
 		instructions,
 		tools,
 		permissions,
+		declaredPermissions,
 		dependencies,
 		urls,
 		rawSections: sections,

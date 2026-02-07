@@ -1,4 +1,5 @@
 import type { CategoryScore, Finding, ParsedSkill } from "../types.js";
+import { applyDeclaredPermissions } from "./declared-match.js";
 
 /** Pattern definitions for injection detection */
 interface InjectionPattern {
@@ -284,20 +285,29 @@ export async function analyzeInjection(
 		findings.push(finding);
 	}
 
-	const hasCritical = findings.some((f) => f.severity === "critical");
+	// Apply declared permissions — downgrade matching findings
+	const adjustedFindings = applyDeclaredPermissions(findings, skill.declaredPermissions);
+
+	// Recalculate score based on adjusted deductions
+	let adjustedScore = 100;
+	for (const f of adjustedFindings) {
+		adjustedScore = Math.max(0, adjustedScore - f.deduction);
+	}
+
+	const hasCritical = adjustedFindings.some((f) => f.severity === "critical");
 	const summary =
-		findings.length === 0
+		adjustedFindings.length === 0
 			? "No injection patterns detected."
-			: `Found ${findings.length} injection-related findings. ${
+			: `Found ${adjustedFindings.length} injection-related findings. ${
 					hasCritical
 						? "CRITICAL: Active injection attacks detected. This skill is dangerous."
 						: "Suspicious patterns detected that warrant review."
 				}`;
 
 	return {
-		score: Math.max(0, Math.min(100, score)),
+		score: Math.max(0, Math.min(100, adjustedScore)),
 		weight: 0.3,
-		findings,
+		findings: adjustedFindings,
 		summary,
 	};
 }

@@ -82,4 +82,11 @@ describe("scanSkill (integration)", () => {
 		expect(report.categories).toHaveProperty("behavioral");
 		expect(report.categories).toHaveProperty("content");
 	});
+
+	it("declared permissions skill should score higher than undeclared", async () => {
+		const declaredReport = await scanSkill(loadFixture("declared-permissions.md"));
+		const undeclaredReport = await scanSkill(loadFixture("undeclared-permissions.md"));
+
+		expect(declaredReport.overall).toBeGreaterThan(undeclaredReport.overall);
+	});
 });

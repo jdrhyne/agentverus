@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseSkill } from "../../src/scanner/parser.js";
 import { analyzePermissions } from "../../src/scanner/analyzers/permissions.js";
+import { analyzeInjection } from "../../src/scanner/analyzers/injection.js";
 
 const FIXTURES_DIR = join(__dirname, "../fixtures/skills");
 
@@ -57,5 +58,37 @@ describe("analyzePermissions", () => {
 		const skill = parseSkill(loadFixture("safe-basic.md"));
 		const result = await analyzePermissions(skill);
 		expect(result.weight).toBe(0.25);
+	});
+
+	it("should not penalize declared credential access", async () => {
+		const skill = parseSkill(loadFixture("declared-permissions.md"));
+		const injResult = await analyzeInjection(skill);
+
+		// Credential-related findings should be downgraded to info severity
+		const credentialFindings = injResult.findings.filter(
+			(f) =>
+				f.title.toLowerCase().includes("credential") ||
+				f.evidence.toLowerCase().includes("api_key") ||
+				f.evidence.toLowerCase().includes("nutrient_api_key"),
+		);
+		for (const f of credentialFindings) {
+			expect(f.severity).toBe("info");
+			expect(f.deduction).toBe(0);
+		}
+	});
+
+	it("should penalize undeclared credential access", async () => {
+		const skill = parseSkill(loadFixture("undeclared-permissions.md"));
+		const injResult = await analyzeInjection(skill);
+
+		// Credential findings should remain at original high severity
+		const credentialFindings = injResult.findings.filter(
+			(f) =>
+				f.title.toLowerCase().includes("credential") ||
+				f.evidence.toLowerCase().includes("api_key") ||
+				f.evidence.toLowerCase().includes("openai_api_key"),
+		);
+		expect(credentialFindings.length).toBeGreaterThan(0);
+		expect(credentialFindings.some((f) => f.severity === "high")).toBe(true);
 	});
 });

@@ -10,6 +10,12 @@ export type Category = "permissions" | "injection" | "dependencies" | "behaviora
 /** Badge tier based on score and findings */
 export type BadgeTier = "certified" | "conditional" | "suspicious" | "rejected";
 
+/** A permission explicitly declared by the skill author */
+export interface DeclaredPermission {
+	readonly kind: string;
+	readonly justification: string;
+}
+
 /** Parsed skill file content */
 export interface ParsedSkill {
 	readonly name: string;
@@ -17,6 +23,7 @@ export interface ParsedSkill {
 	readonly instructions: string;
 	readonly tools: readonly string[];
 	readonly permissions: readonly string[];
+	readonly declaredPermissions: readonly DeclaredPermission[];
 	readonly dependencies: readonly string[];
 	readonly urls: readonly string[];
 	readonly rawSections: Readonly<Record<string, string>>;

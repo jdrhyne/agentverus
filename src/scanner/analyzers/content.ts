@@ -1,4 +1,5 @@
 import type { CategoryScore, Finding, ParsedSkill } from "../types.js";
+import { applyDeclaredPermissions } from "./declared-match.js";
 
 /** Harmful content patterns */
 const HARMFUL_PATTERNS = [
@@ -204,19 +205,31 @@ export async function analyzeContent(
 		});
 	}
 
+	// Apply declared permissions — downgrade matching findings
+	const adjustedFindings = applyDeclaredPermissions(findings, skill.declaredPermissions);
+
+	// Recalculate score: start at base, add bonuses, subtract adjusted deductions
+	let adjustedScore = 80;
+	if (hasSafetyBoundaries) adjustedScore = Math.min(100, adjustedScore + 10);
+	if (hasOutputConstraints) adjustedScore = Math.min(100, adjustedScore + 5);
+	if (hasErrorHandling) adjustedScore = Math.min(100, adjustedScore + 5);
+	for (const f of adjustedFindings) {
+		adjustedScore = Math.max(0, adjustedScore - f.deduction);
+	}
+
 	const summary =
-		findings.filter((f) => f.severity !== "info").length === 0
+		adjustedFindings.filter((f) => f.severity !== "info").length === 0
 			? "Content quality is good with proper safety boundaries."
-			: `Found ${findings.filter((f) => f.severity !== "info").length} content-related concerns. ${
-					findings.some((f) => f.severity === "critical")
+			: `Found ${adjustedFindings.filter((f) => f.severity !== "info").length} content-related concerns. ${
+					adjustedFindings.some((f) => f.severity === "critical")
 						? "CRITICAL: Harmful content detected."
 						: "Some content quality improvements recommended."
 				}`;
 
 	return {
-		score: Math.max(0, Math.min(100, score)),
+		score: Math.max(0, Math.min(100, adjustedScore)),
 		weight: 0.1,
-		findings,
+		findings: adjustedFindings,
 		summary,
 	};
 }

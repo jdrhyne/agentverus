@@ -1,4 +1,5 @@
 import type { CategoryScore, Finding, ParsedSkill } from "../types.js";
+import { applyDeclaredPermissions } from "./declared-match.js";
 
 /** Behavioral risk patterns */
 interface BehavioralPattern {
@@ -151,19 +152,28 @@ export async function analyzeBehavioral(
 		}
 	}
 
+	// Apply declared permissions — downgrade matching findings
+	const adjustedFindings = applyDeclaredPermissions(findings, skill.declaredPermissions);
+
+	// Recalculate score based on adjusted deductions
+	let adjustedScore = 100;
+	for (const f of adjustedFindings) {
+		adjustedScore = Math.max(0, adjustedScore - f.deduction);
+	}
+
 	const summary =
-		findings.length === 0
+		adjustedFindings.length === 0
 			? "No behavioral risk concerns detected."
-			: `Found ${findings.length} behavioral risk findings. ${
-					findings.some((f) => f.severity === "high")
+			: `Found ${adjustedFindings.length} behavioral risk findings. ${
+					adjustedFindings.some((f) => f.severity === "high")
 						? "High-risk behavioral patterns detected."
 						: "Moderate behavioral concerns noted."
 				}`;
 
 	return {
-		score: Math.max(0, Math.min(100, score)),
+		score: Math.max(0, Math.min(100, adjustedScore)),
 		weight: 0.15,
-		findings,
+		findings: adjustedFindings,
 		summary,
 	};
 }
