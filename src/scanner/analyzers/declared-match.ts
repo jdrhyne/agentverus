@@ -71,15 +71,7 @@ const DECLARED_KIND_MATCHERS: ReadonlyArray<{
 	},
 	{
 		kindKeywords: ["exec", "shell"],
-		findingKeywords: [
-			"exec",
-			"shell",
-			"execute",
-			"run",
-			"spawn",
-			"process",
-			"command",
-		],
+		findingKeywords: ["exec", "shell", "execute", "run", "spawn", "process", "command"],
 	},
 ];
 
@@ -93,8 +85,7 @@ export function findMatchingDeclaration(
 ): DeclaredPermission | undefined {
 	if (declaredPermissions.length === 0) return undefined;
 
-	const findingText =
-		`${finding.title} ${finding.evidence} ${finding.description}`.toLowerCase();
+	const findingText = `${finding.title} ${finding.evidence} ${finding.description}`.toLowerCase();
 
 	for (const declared of declaredPermissions) {
 		const kind = declared.kind.toLowerCase();
@@ -103,9 +94,7 @@ export function findMatchingDeclaration(
 			const kindMatches = matcher.kindKeywords.some((kw) => kind.includes(kw));
 			if (!kindMatches) continue;
 
-			const findingMatches = matcher.findingKeywords.some((fw) =>
-				findingText.includes(fw),
-			);
+			const findingMatches = matcher.findingKeywords.some((fw) => findingText.includes(fw));
 			if (findingMatches) return declared;
 		}
 	}

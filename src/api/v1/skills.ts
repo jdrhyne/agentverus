@@ -14,9 +14,7 @@ const searchParamsSchema = z.object({
 
 /** GET /skills — Search and list skills */
 skillsApp.get("/skills", async (c) => {
-	const rawParams = Object.fromEntries(
-		new URL(c.req.url).searchParams.entries(),
-	);
+	const rawParams = Object.fromEntries(new URL(c.req.url).searchParams.entries());
 
 	const params = searchParamsSchema.parse(rawParams);
 

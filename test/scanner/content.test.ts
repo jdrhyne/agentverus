@@ -1,8 +1,8 @@
-import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { parseSkill } from "../../src/scanner/parser.js";
+import { describe, expect, it } from "vitest";
 import { analyzeContent } from "../../src/scanner/analyzers/content.js";
+import { parseSkill } from "../../src/scanner/parser.js";
 
 const FIXTURES_DIR = join(__dirname, "../fixtures/skills");
 
@@ -23,9 +23,7 @@ describe("analyzeContent", () => {
 		const skill = parseSkill(loadFixture("safe-basic.md"));
 		const result = await analyzeContent(skill);
 
-		const safetyFindings = result.findings.filter(
-			(f) => f.id === "CONT-SAFETY-GOOD",
-		);
+		const safetyFindings = result.findings.filter((f) => f.id === "CONT-SAFETY-GOOD");
 		expect(safetyFindings.length).toBe(1);
 	});
 
@@ -33,9 +31,7 @@ describe("analyzeContent", () => {
 		const skill = parseSkill(loadFixture("safe-complex.md"));
 		const result = await analyzeContent(skill);
 
-		const outputFindings = result.findings.filter(
-			(f) => f.id === "CONT-OUTPUT-GOOD",
-		);
+		const outputFindings = result.findings.filter((f) => f.id === "CONT-OUTPUT-GOOD");
 		expect(outputFindings.length).toBe(1);
 	});
 
@@ -43,9 +39,7 @@ describe("analyzeContent", () => {
 		const skill = parseSkill(loadFixture("safe-basic.md"));
 		const result = await analyzeContent(skill);
 
-		const errorFindings = result.findings.filter(
-			(f) => f.id === "CONT-ERROR-GOOD",
-		);
+		const errorFindings = result.findings.filter((f) => f.id === "CONT-ERROR-GOOD");
 		expect(errorFindings.length).toBe(1);
 	});
 
@@ -53,9 +47,7 @@ describe("analyzeContent", () => {
 		const skill = parseSkill("Just raw text");
 		const result = await analyzeContent(skill);
 
-		const descFindings = result.findings.filter(
-			(f) => f.id === "CONT-NO-DESC",
-		);
+		const descFindings = result.findings.filter((f) => f.id === "CONT-NO-DESC");
 		expect(descFindings.length).toBe(1);
 	});
 
@@ -63,9 +55,7 @@ describe("analyzeContent", () => {
 		const skill = parseSkill(loadFixture("obfuscated-skill.md"));
 		const result = await analyzeContent(skill);
 
-		const b64Findings = result.findings.filter(
-			(f) => f.title.toLowerCase().includes("base64"),
-		);
+		const b64Findings = result.findings.filter((f) => f.title.toLowerCase().includes("base64"));
 		expect(b64Findings.length).toBeGreaterThan(0);
 	});
 
@@ -74,9 +64,7 @@ describe("analyzeContent", () => {
 		const result = await analyzeContent(skill);
 
 		const keyFindings = result.findings.filter(
-			(f) =>
-				f.title.toLowerCase().includes("api key") ||
-				f.title.toLowerCase().includes("secret"),
+			(f) => f.title.toLowerCase().includes("api key") || f.title.toLowerCase().includes("secret"),
 		);
 		expect(keyFindings.length).toBeGreaterThan(0);
 	});
@@ -85,9 +73,7 @@ describe("analyzeContent", () => {
 		const skill = parseSkill(loadFixture("excessive-permissions.md"));
 		const result = await analyzeContent(skill);
 
-		const noSafetyFindings = result.findings.filter(
-			(f) => f.id === "CONT-NO-SAFETY",
-		);
+		const noSafetyFindings = result.findings.filter((f) => f.id === "CONT-NO-SAFETY");
 		expect(noSafetyFindings.length).toBe(1);
 	});
 });

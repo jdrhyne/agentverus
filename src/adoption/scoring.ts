@@ -30,10 +30,7 @@ export function calculatePopularityScore(installs: number): number {
 	return 0;
 }
 
-export function calculateFreshnessScore(
-	lastUpdated: Date | null,
-	now: Date = new Date(),
-): number {
+export function calculateFreshnessScore(lastUpdated: Date | null, now: Date = new Date()): number {
 	if (!lastUpdated) return 0;
 
 	const deltaMs = Math.max(0, now.getTime() - lastUpdated.getTime());
@@ -47,10 +44,7 @@ export function calculateFreshnessScore(
 	return 5;
 }
 
-export function calculateMaturityScore(
-	createdAt: Date | null,
-	now: Date = new Date(),
-): number {
+export function calculateMaturityScore(createdAt: Date | null, now: Date = new Date()): number {
 	if (!createdAt) return 0;
 
 	const ageMs = Math.max(0, now.getTime() - createdAt.getTime());
@@ -73,9 +67,7 @@ export function calculateAdoptionScore(
 	const maturity = calculateMaturityScore(signals.createdAt, now);
 
 	const combinedRaw =
-		popularity * WEIGHTS.popularity +
-		freshness * WEIGHTS.freshness +
-		maturity * WEIGHTS.maturity;
+		popularity * WEIGHTS.popularity + freshness * WEIGHTS.freshness + maturity * WEIGHTS.maturity;
 
 	const combined = clampScore(combinedRaw);
 	const tier = adoptionTierFromCombined(combined);
@@ -88,4 +80,3 @@ export function calculateAdoptionScore(
 		tier,
 	};
 }
-

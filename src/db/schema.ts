@@ -1,34 +1,24 @@
+import { sql } from "drizzle-orm";
 import {
-	pgTable,
-	uuid,
-	text,
-	integer,
-	timestamp,
-	pgEnum,
-	jsonb,
+	check,
 	date,
 	index,
+	integer,
+	jsonb,
+	pgEnum,
+	pgTable,
+	text,
+	timestamp,
 	uniqueIndex,
-	check,
+	uuid,
 } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
 
 // Enums
 export const skillFormatEnum = pgEnum("skill_format", ["openclaw", "claude", "generic"]);
 
-export const severityEnum = pgEnum("severity", [
-	"critical",
-	"high",
-	"medium",
-	"low",
-	"info",
-]);
+export const severityEnum = pgEnum("severity", ["critical", "high", "medium", "low", "info"]);
 
-export const certificationTierEnum = pgEnum("certification_tier", [
-	"free",
-	"basic",
-	"enterprise",
-]);
+export const certificationTierEnum = pgEnum("certification_tier", ["free", "basic", "enterprise"]);
 
 export const certificationStatusEnum = pgEnum("certification_status", [
 	"pending",
@@ -39,12 +29,7 @@ export const certificationStatusEnum = pgEnum("certification_status", [
 	"failed",
 ]);
 
-export const apiKeyTierEnum = pgEnum("api_key_tier", [
-	"free",
-	"pro",
-	"enterprise",
-	"admin",
-]);
+export const apiKeyTierEnum = pgEnum("api_key_tier", ["free", "pro", "enterprise", "admin"]);
 
 export const badgeTierEnum = pgEnum("badge_tier", [
 	"certified",

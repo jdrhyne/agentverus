@@ -5,7 +5,10 @@ const homeApp = new Hono();
 
 homeApp.get("/", (c) => {
 	return c.html(
-		<BaseLayout title="Trust, but verify" description="The trust certification service for AI agent skills.">
+		<BaseLayout
+			title="Trust, but verify"
+			description="The trust certification service for AI agent skills."
+		>
 			{/* Hero */}
 			<section class="py-20 px-4">
 				<div class="max-w-4xl mx-auto text-center">
@@ -13,8 +16,8 @@ homeApp.get("/", (c) => {
 						Trust, but <span class="text-certified">verify</span>.
 					</h1>
 					<p class="text-xl text-gray-400 mb-10 max-w-2xl mx-auto">
-						The trust certification service for AI agent skills. Scan, audit, and certify skills before
-						they access your data.
+						The trust certification service for AI agent skills. Scan, audit, and certify skills
+						before they access your data.
 					</p>
 					<div class="flex gap-4 justify-center">
 						<a
@@ -37,7 +40,9 @@ homeApp.get("/", (c) => {
 			<section class="py-12 border-y border-gray-800 bg-gray-900/30">
 				<div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
 					<div>
-						<p class="text-4xl font-bold text-white" id="stat-total">—</p>
+						<p class="text-4xl font-bold text-white" id="stat-total">
+							—
+						</p>
 						<p class="text-gray-400 mt-1">Skills Scanned</p>
 					</div>
 					<div>
@@ -91,12 +96,36 @@ homeApp.get("/", (c) => {
 					<h2 class="text-3xl font-bold text-center mb-12">What We Detect</h2>
 					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 						{[
-							{ icon: "🔐", title: "Permission Analysis", desc: "Flags excessive or mismatched permissions for the skill's stated purpose." },
-							{ icon: "💉", title: "Injection Detection", desc: "Catches prompt injection, instruction override, and social engineering attacks." },
-							{ icon: "🔗", title: "Dependency Scanning", desc: "Identifies suspicious URLs, IP addresses, and download-and-execute patterns." },
-							{ icon: "🎭", title: "Behavioral Risk", desc: "Detects unrestricted scope, system modification, and autonomous action risks." },
-							{ icon: "📝", title: "Content Safety", desc: "Checks for safety boundaries, harmful content, and documentation quality." },
-							{ icon: "🏅", title: "Trust Badges", desc: "Embeddable SVG badges showing trust score. CERTIFIED, CONDITIONAL, SUSPICIOUS, or REJECTED." },
+							{
+								icon: "🔐",
+								title: "Permission Analysis",
+								desc: "Flags excessive or mismatched permissions for the skill's stated purpose.",
+							},
+							{
+								icon: "💉",
+								title: "Injection Detection",
+								desc: "Catches prompt injection, instruction override, and social engineering attacks.",
+							},
+							{
+								icon: "🔗",
+								title: "Dependency Scanning",
+								desc: "Identifies suspicious URLs, IP addresses, and download-and-execute patterns.",
+							},
+							{
+								icon: "🎭",
+								title: "Behavioral Risk",
+								desc: "Detects unrestricted scope, system modification, and autonomous action risks.",
+							},
+							{
+								icon: "📝",
+								title: "Content Safety",
+								desc: "Checks for safety boundaries, harmful content, and documentation quality.",
+							},
+							{
+								icon: "🏅",
+								title: "Trust Badges",
+								desc: "Embeddable SVG badges showing trust score. CERTIFIED, CONDITIONAL, SUSPICIOUS, or REJECTED.",
+							},
 						].map((feature) => (
 							<div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
 								<span class="text-3xl mb-3 block">{feature.icon}</span>
@@ -116,9 +145,8 @@ homeApp.get("/", (c) => {
 					</blockquote>
 					<p class="text-gray-500">
 						Our scanner catches what they catch — and more. We use the{" "}
-						<strong class="text-gray-300">ASST</strong> (Agent Skill Security Threats)
-						taxonomy, our OWASP-style categorization of 10 threat categories specific to
-						AI agent skills.
+						<strong class="text-gray-300">ASST</strong> (Agent Skill Security Threats) taxonomy, our
+						OWASP-style categorization of 10 threat categories specific to AI agent skills.
 					</p>
 				</div>
 			</section>
@@ -128,7 +156,8 @@ homeApp.get("/", (c) => {
 				<div class="max-w-3xl mx-auto text-center">
 					<h2 class="text-3xl font-bold mb-4">Scan your first skill free</h2>
 					<p class="text-gray-400 mb-8">
-						No account required. No payment. Just paste your SKILL.md and get a trust report in seconds.
+						No account required. No payment. Just paste your SKILL.md and get a trust report in
+						seconds.
 					</p>
 					<a
 						href="/submit"

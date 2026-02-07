@@ -49,9 +49,7 @@ const SUSPICIOUS_FOR_LIMITED = [
 	"file_write",
 ] as const;
 
-function getPermissionTier(
-	perm: string,
-): "critical" | "high" | "medium" | "low" | null {
+function getPermissionTier(perm: string): "critical" | "high" | "medium" | "low" | null {
 	const lower = perm.toLowerCase();
 	if (CRITICAL_PERMISSIONS.some((p) => lower.includes(p))) return "critical";
 	if (HIGH_PERMISSIONS.some((p) => lower.includes(p))) return "high";
@@ -66,9 +64,7 @@ function isLimitedScopeSkill(skill: ParsedSkill): boolean {
 }
 
 /** Analyze permissions requested by a skill */
-export async function analyzePermissions(
-	skill: ParsedSkill,
-): Promise<CategoryScore> {
+export async function analyzePermissions(skill: ParsedSkill): Promise<CategoryScore> {
 	const findings: Finding[] = [];
 	let score = 100;
 
@@ -100,8 +96,7 @@ export async function analyzePermissions(
 				tier === "critical"
 					? `Remove the "${perm}" permission unless absolutely required. Critical permissions grant extensive system access.`
 					: `Consider whether "${perm}" is necessary for the skill's stated functionality.`,
-			owaspCategory:
-				tier === "critical" || tier === "high" ? "ASST-03" : "ASST-08",
+			owaspCategory: tier === "critical" || tier === "high" ? "ASST-03" : "ASST-08",
 		});
 	}
 

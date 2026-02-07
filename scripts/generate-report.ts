@@ -3,7 +3,7 @@
  * Generate aggregate statistics from scan results.
  * Usage: pnpm tsx scripts/generate-report.ts <scan-results-dir>
  */
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 // This script is designed to process the output of bulk-scan
@@ -19,8 +19,16 @@ function main(): void {
 		generatedAt: new Date().toISOString(),
 		totalScanned: 0,
 		scoreDistribution: {
-			"0-10": 0, "11-20": 0, "21-30": 0, "31-40": 0, "41-50": 0,
-			"51-60": 0, "61-70": 0, "71-80": 0, "81-90": 0, "91-100": 0,
+			"0-10": 0,
+			"11-20": 0,
+			"21-30": 0,
+			"31-40": 0,
+			"41-50": 0,
+			"51-60": 0,
+			"61-70": 0,
+			"71-80": 0,
+			"81-90": 0,
+			"91-100": 0,
 		},
 		badgeDistribution: {
 			certified: 0,
@@ -40,9 +48,16 @@ function main(): void {
 		highFindings: 0,
 		topFindingTypes: [] as Array<{ id: string; count: number }>,
 		asstDistribution: {
-			"ASST-01": 0, "ASST-02": 0, "ASST-03": 0, "ASST-04": 0,
-			"ASST-05": 0, "ASST-06": 0, "ASST-07": 0, "ASST-08": 0,
-			"ASST-09": 0, "ASST-10": 0,
+			"ASST-01": 0,
+			"ASST-02": 0,
+			"ASST-03": 0,
+			"ASST-04": 0,
+			"ASST-05": 0,
+			"ASST-06": 0,
+			"ASST-07": 0,
+			"ASST-08": 0,
+			"ASST-09": 0,
+			"ASST-10": 0,
 		},
 		formatDistribution: {
 			openclaw: 0,
@@ -51,10 +66,7 @@ function main(): void {
 		},
 	};
 
-	writeFileSync(
-		join(DATA_DIR, "aggregate-stats.json"),
-		JSON.stringify(stats, null, 2),
-	);
+	writeFileSync(join(DATA_DIR, "aggregate-stats.json"), JSON.stringify(stats, null, 2));
 
 	// Generate markdown report template
 	const report = `# State of Agent Skill Security

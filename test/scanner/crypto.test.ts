@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { createAttestation, verifyAttestation, getOrCreateKeyPair } from "../../src/lib/crypto.js";
+import { describe, expect, it } from "vitest";
+import { createAttestation, getOrCreateKeyPair, verifyAttestation } from "../../src/lib/crypto.js";
 
 describe("Cryptographic Attestation", () => {
 	it("should create and verify an attestation", () => {

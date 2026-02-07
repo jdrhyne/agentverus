@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { readFile } from "node:fs/promises";
 import { scanSkill, scanSkillFromUrl } from "./index.js";
-import type { TrustReport, Finding } from "./types.js";
+import type { Finding, TrustReport } from "./types.js";
 
 const COLORS = {
 	reset: "\x1b[0m",
@@ -53,9 +53,7 @@ function printReport(report: TrustReport): void {
 	const color = badgeColor(report.badge);
 
 	console.log();
-	console.log(
-		`${COLORS.bold}AgentVerus Scanner v${report.metadata.scannerVersion}${COLORS.reset}`,
-	);
+	console.log(`${COLORS.bold}AgentVerus Scanner v${report.metadata.scannerVersion}${COLORS.reset}`);
 	console.log("─".repeat(60));
 
 	// Overall score
@@ -65,19 +63,22 @@ function printReport(report: TrustReport): void {
 	console.log(
 		`${COLORS.bold}Badge:${COLORS.reset}         ${color}${COLORS.bold}${report.badge.toUpperCase()}${COLORS.reset}`,
 	);
-	console.log(
-		`${COLORS.bold}Format:${COLORS.reset}        ${report.metadata.skillFormat}`,
-	);
-	console.log(
-		`${COLORS.bold}Duration:${COLORS.reset}      ${report.metadata.durationMs}ms`,
-	);
+	console.log(`${COLORS.bold}Format:${COLORS.reset}        ${report.metadata.skillFormat}`);
+	console.log(`${COLORS.bold}Duration:${COLORS.reset}      ${report.metadata.durationMs}ms`);
 
 	// Category breakdown
 	console.log(`\n${COLORS.bold}Category Scores:${COLORS.reset}`);
 	for (const [name, cat] of Object.entries(report.categories)) {
 		const barLen = Math.round(cat.score / 2);
 		const bar = "█".repeat(barLen) + "░".repeat(50 - barLen);
-		const catColor = cat.score >= 90 ? COLORS.green : cat.score >= 75 ? COLORS.yellow : cat.score >= 50 ? COLORS.yellow : COLORS.red;
+		const catColor =
+			cat.score >= 90
+				? COLORS.green
+				: cat.score >= 75
+					? COLORS.yellow
+					: cat.score >= 50
+						? COLORS.yellow
+						: COLORS.red;
 		console.log(
 			`  ${name.padEnd(15)} ${catColor}${bar} ${cat.score}/100${COLORS.reset} (weight: ${(cat.weight * 100).toFixed(0)}%)`,
 		);
@@ -104,18 +105,14 @@ function printReport(report: TrustReport): void {
 			);
 
 			for (const finding of severityFindings) {
-				console.log(
-					`    ${color}●${COLORS.reset} ${finding.title}`,
-				);
+				console.log(`    ${color}●${COLORS.reset} ${finding.title}`);
 				if (finding.evidence) {
 					console.log(
 						`      ${COLORS.gray}Evidence: ${finding.evidence.slice(0, 120)}${COLORS.reset}`,
 					);
 				}
 				if (finding.lineNumber) {
-					console.log(
-						`      ${COLORS.gray}Line: ${finding.lineNumber}${COLORS.reset}`,
-					);
+					console.log(`      ${COLORS.gray}Line: ${finding.lineNumber}${COLORS.reset}`);
 				}
 				console.log(
 					`      ${COLORS.gray}[${finding.owaspCategory}] ${finding.recommendation.slice(0, 120)}${COLORS.reset}`,
@@ -131,9 +128,7 @@ async function main(): Promise<void> {
 	const args = process.argv.slice(2);
 
 	if (args.length === 0) {
-		console.error(
-			"Usage: pnpm scan <file-path> [--url <url>] [--json]",
-		);
+		console.error("Usage: pnpm scan <file-path> [--url <url>] [--json]");
 		process.exit(1);
 	}
 
@@ -163,10 +158,7 @@ async function main(): Promise<void> {
 	}
 
 	// Exit code based on badge
-	const exitCode =
-		report.badge === "certified" || report.badge === "conditional"
-			? 0
-			: 1;
+	const exitCode = report.badge === "certified" || report.badge === "conditional" ? 0 : 1;
 	process.exit(exitCode);
 }
 

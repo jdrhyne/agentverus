@@ -97,8 +97,7 @@ const BEHAVIORAL_PATTERNS: readonly BehavioralPattern[] = [
 		severity: "medium",
 		deduction: 10,
 		owaspCategory: "ASST-09",
-		recommendation:
-			"Set maximum retry counts and loop bounds to prevent resource exhaustion.",
+		recommendation: "Set maximum retry counts and loop bounds to prevent resource exhaustion.",
 	},
 	{
 		name: "Financial/payment actions",
@@ -117,9 +116,7 @@ const BEHAVIORAL_PATTERNS: readonly BehavioralPattern[] = [
 ] as const;
 
 /** Analyze behavioral risk profile */
-export async function analyzeBehavioral(
-	skill: ParsedSkill,
-): Promise<CategoryScore> {
+export async function analyzeBehavioral(skill: ParsedSkill): Promise<CategoryScore> {
 	const findings: Finding[] = [];
 	let score = 100;
 	const content = skill.rawContent;

@@ -35,7 +35,10 @@ export class ForbiddenError extends AppError {
 }
 
 export class RateLimitError extends AppError {
-	constructor(message = "Rate limit exceeded", public readonly retryAfter?: number) {
+	constructor(
+		message = "Rate limit exceeded",
+		public readonly retryAfter?: number,
+	) {
 		super(message, 429, "RATE_LIMIT_EXCEEDED");
 		this.name = "RateLimitError";
 	}
@@ -79,10 +82,7 @@ export function errorHandler(err: Error, c: Context) {
 		{
 			error: {
 				code: "INTERNAL_ERROR",
-				message:
-					process.env.NODE_ENV === "production"
-						? "An internal error occurred"
-						: err.message,
+				message: process.env.NODE_ENV === "production" ? "An internal error occurred" : err.message,
 			},
 		},
 		500,

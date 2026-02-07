@@ -41,14 +41,18 @@ statsApp.get("/stats", (c) => {
 								<div class="flex items-center gap-3">
 									<span class="w-32 text-sm text-gray-400">{item.label}</span>
 									<div class="flex-1 bg-gray-800 rounded-full h-4 overflow-hidden">
-										<div class={`h-full ${item.color} rounded-full transition-all duration-500`} style={`width: ${item.pct}%`} />
+										<div
+											class={`h-full ${item.color} rounded-full transition-all duration-500`}
+											style={`width: ${item.pct}%`}
+										/>
 									</div>
 									<span class="w-12 text-right text-sm text-gray-400">{item.pct}%</span>
 								</div>
 							))}
 						</div>
 						<p class="text-gray-500 text-sm mt-4">
-							Statistics will populate as skills are scanned. Submit your first skill to get started.
+							Statistics will populate as skills are scanned. Submit your first skill to get
+							started.
 						</p>
 					</div>
 

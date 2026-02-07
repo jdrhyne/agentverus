@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 beforeEach(() => {
 	vi.resetModules();
@@ -44,7 +44,10 @@ describe("skills.sh parsing", () => {
 			</script>
 		`;
 
-		vi.stubGlobal("fetch", vi.fn(async () => new Response(html, { status: 200 })));
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async () => new Response(html, { status: 200 })),
+		);
 
 		const { lookupInstalls } = await import("../../src/adoption/skills-sh.js");
 		const installs = await lookupInstalls("OCTO", "REPO", "my-skill");
@@ -72,11 +75,12 @@ describe("skills.sh parsing", () => {
 
 	it("should return empty data when initialSkills is missing", async () => {
 		const html = "<html><body><script>console.log('no skills');</script></body></html>";
-		vi.stubGlobal("fetch", vi.fn(async () => new Response(html, { status: 200 })));
-
-		const { fetchSkillsShData, lookupInstalls } = await import(
-			"../../src/adoption/skills-sh.js"
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async () => new Response(html, { status: 200 })),
 		);
+
+		const { fetchSkillsShData, lookupInstalls } = await import("../../src/adoption/skills-sh.js");
 
 		const data = await fetchSkillsShData();
 		expect(data).toEqual([]);
@@ -85,4 +89,3 @@ describe("skills.sh parsing", () => {
 		expect(installs).toBe(0);
 	});
 });
-

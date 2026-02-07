@@ -19,7 +19,12 @@ function parseFrontmatter(content: string): Record<string, string | string[]> | 
 
 		if (inArray) {
 			if (trimmed.startsWith("- ")) {
-				arrayItems.push(trimmed.slice(2).trim().replace(/^["']|["']$/g, ""));
+				arrayItems.push(
+					trimmed
+						.slice(2)
+						.trim()
+						.replace(/^["']|["']$/g, ""),
+				);
 				continue;
 			}
 			data[currentKey] = [...arrayItems];
@@ -200,13 +205,9 @@ export function parseSkill(content: string): ParsedSkill {
 		const bodyMatch = content.match(/^---\s*\n[\s\S]*?\n---\s*\n([\s\S]*)/);
 		instructions = bodyMatch?.[1]?.trim() ?? "";
 	} else if (format === "claude") {
-		name = sections["Description"]
-			? ""
-			: Object.keys(sections)[0] ?? "";
-		description =
-			sections["Description"] ?? sections["description"] ?? "";
-		instructions =
-			sections["Instructions"] ?? sections["instructions"] ?? "";
+		name = sections["Description"] ? "" : (Object.keys(sections)[0] ?? "");
+		description = sections["Description"] ?? sections["description"] ?? "";
+		instructions = sections["Instructions"] ?? sections["instructions"] ?? "";
 
 		const toolsSection = sections["Tools"] ?? sections["tools"] ?? "";
 		tools = extractListItems(toolsSection);
@@ -217,8 +218,7 @@ export function parseSkill(content: string): ParsedSkill {
 		// Generic: best-effort extraction
 		const firstHeading = Object.keys(sections)[0];
 		name = firstHeading ?? "";
-		description =
-			sections["Description"] ?? sections["About"] ?? Object.values(sections)[0] ?? "";
+		description = sections["Description"] ?? sections["About"] ?? Object.values(sections)[0] ?? "";
 		instructions = content;
 	}
 

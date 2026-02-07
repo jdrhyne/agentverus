@@ -94,4 +94,3 @@ export async function resolveAdoption(skillRef: string): Promise<AdoptionScore> 
 
 	return calculateAdoptionScore(signals);
 }
-

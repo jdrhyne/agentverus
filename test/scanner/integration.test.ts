@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { describe, expect, it } from "vitest";
 import { scanSkill } from "../../src/scanner/index.js";
 
 const FIXTURES_DIR = join(__dirname, "../fixtures/skills");
@@ -33,7 +33,9 @@ describe("scanSkill (integration)", () => {
 
 		expect(report.overall).toBeLessThanOrEqual(55);
 		expect(report.badge).toBe("rejected");
-		expect(report.findings.some((f) => f.severity === "critical" || f.severity === "high")).toBe(true);
+		expect(report.findings.some((f) => f.severity === "critical" || f.severity === "high")).toBe(
+			true,
+		);
 	});
 
 	it("should score malicious-injection below 30 with REJECTED badge", async () => {
@@ -63,7 +65,11 @@ describe("scanSkill (integration)", () => {
 		const report = await scanSkill(loadFixture("excessive-permissions.md"));
 
 		expect(report.overall).toBeLessThan(80);
-		expect(report.badge === "suspicious" || report.badge === "rejected" || report.badge === "conditional").toBe(true);
+		expect(
+			report.badge === "suspicious" ||
+				report.badge === "rejected" ||
+				report.badge === "conditional",
+		).toBe(true);
 	});
 
 	it("should score openclaw-format above 85", async () => {

@@ -53,9 +53,10 @@ function getHostname(url: string): string {
 }
 
 /** Classify a URL by risk level */
-function classifyUrl(
-	url: string,
-): { risk: "trusted" | "raw" | "ip" | "data" | "unknown"; deduction: number } {
+function classifyUrl(url: string): {
+	risk: "trusted" | "raw" | "ip" | "data" | "unknown";
+	deduction: number;
+} {
 	if (url.startsWith("data:")) {
 		return { risk: "data", deduction: 20 };
 	}
@@ -84,9 +85,7 @@ function classifyUrl(
 }
 
 /** Analyze dependencies and external URLs */
-export async function analyzeDependencies(
-	skill: ParsedSkill,
-): Promise<CategoryScore> {
+export async function analyzeDependencies(skill: ParsedSkill): Promise<CategoryScore> {
 	const findings: Finding[] = [];
 	let score = 100;
 	const content = skill.rawContent;
@@ -131,8 +130,7 @@ export async function analyzeDependencies(
 			const deduction = 25;
 			score = Math.max(0, score - deduction);
 
-			const lineNumber =
-				content.slice(0, content.indexOf(match[0])).split("\n").length;
+			const lineNumber = content.slice(0, content.indexOf(match[0])).split("\n").length;
 
 			findings.push({
 				id: `DEP-DL-EXEC-${findings.length + 1}`,
@@ -161,8 +159,7 @@ export async function analyzeDependencies(
 			description: `The skill references ${skill.urls.length} external URLs. While not inherently dangerous, many external dependencies increase the attack surface.`,
 			evidence: `URLs: ${skill.urls.slice(0, 5).join(", ")}${skill.urls.length > 5 ? "..." : ""}`,
 			deduction: 0,
-			recommendation:
-				"Minimize external dependencies to reduce supply chain risk.",
+			recommendation: "Minimize external dependencies to reduce supply chain risk.",
 			owaspCategory: "ASST-04",
 		});
 	}

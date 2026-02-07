@@ -1,8 +1,8 @@
-import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { parseSkill } from "../../src/scanner/parser.js";
+import { describe, expect, it } from "vitest";
 import { analyzeDependencies } from "../../src/scanner/analyzers/dependencies.js";
+import { parseSkill } from "../../src/scanner/parser.js";
 
 const FIXTURES_DIR = join(__dirname, "../fixtures/skills");
 
@@ -32,9 +32,7 @@ describe("analyzeDependencies", () => {
 		const skill = parseSkill(loadFixture("suspicious-urls.md"));
 		const result = await analyzeDependencies(skill);
 
-		const ipFindings = result.findings.filter(
-			(f) => f.title.includes("IP address"),
-		);
+		const ipFindings = result.findings.filter((f) => f.title.includes("IP address"));
 		expect(ipFindings.length).toBeGreaterThan(0);
 	});
 
@@ -42,9 +40,7 @@ describe("analyzeDependencies", () => {
 		const skill = parseSkill(loadFixture("suspicious-urls.md"));
 		const result = await analyzeDependencies(skill);
 
-		const rawFindings = result.findings.filter(
-			(f) => f.title.includes("Raw content"),
-		);
+		const rawFindings = result.findings.filter((f) => f.title.includes("Raw content"));
 		expect(rawFindings.length).toBeGreaterThan(0);
 	});
 
@@ -52,14 +48,16 @@ describe("analyzeDependencies", () => {
 		const skill = parseSkill(loadFixture("malicious-escalation.md"));
 		const result = await analyzeDependencies(skill);
 
-		const dlExecFindings = result.findings.filter(
-			(f) => f.title.toLowerCase().includes("download"),
+		const dlExecFindings = result.findings.filter((f) =>
+			f.title.toLowerCase().includes("download"),
 		);
 		expect(dlExecFindings.length).toBeGreaterThanOrEqual(0);
 	});
 
 	it("should not penalize trusted domains", async () => {
-		const skill = parseSkill("# Test\nCheck https://github.com/user/repo for details.\nSee https://docs.python.org/3/");
+		const skill = parseSkill(
+			"# Test\nCheck https://github.com/user/repo for details.\nSee https://docs.python.org/3/",
+		);
 		const result = await analyzeDependencies(skill);
 
 		expect(result.score).toBe(100);

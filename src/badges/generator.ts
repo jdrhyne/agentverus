@@ -28,13 +28,7 @@ const BADGE_LABELS: Record<BadgeTier, string> = {
  * Generate a shields.io-style SVG badge.
  */
 export function generateBadge(options: BadgeOptions): string {
-	const {
-		score,
-		badge,
-		style = "flat",
-		label = "AgentVerus",
-		certified = false,
-	} = options;
+	const { score, badge, style = "flat", label = "AgentVerus", certified = false } = options;
 
 	const rightColor = BADGE_COLORS[badge];
 	const rightText = `${BADGE_LABELS[badge]} ${score}`;

@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import { z } from "zod/v4";
-import { scanSkill } from "../../scanner/index.js";
 import { sha256 } from "../../lib/utils.js";
-import { ValidationError, NotFoundError } from "../middleware/errors.js";
+import { scanSkill } from "../../scanner/index.js";
+import { NotFoundError, ValidationError } from "../middleware/errors.js";
 
 const certifyApp = new Hono();
 

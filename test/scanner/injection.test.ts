@@ -1,9 +1,9 @@
-import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { parseSkill } from "../../src/scanner/parser.js";
-import { analyzeInjection } from "../../src/scanner/analyzers/injection.js";
+import { describe, expect, it } from "vitest";
 import { analyzeBehavioral } from "../../src/scanner/analyzers/behavioral.js";
+import { analyzeInjection } from "../../src/scanner/analyzers/injection.js";
+import { parseSkill } from "../../src/scanner/parser.js";
 
 const FIXTURES_DIR = join(__dirname, "../fixtures/skills");
 
@@ -39,9 +39,7 @@ describe("analyzeInjection", () => {
 		const skill = parseSkill(loadFixture("malicious-injection.md"));
 		const result = await analyzeInjection(skill);
 
-		const overrideFindings = result.findings.filter(
-			(f) => f.owaspCategory === "ASST-01",
-		);
+		const overrideFindings = result.findings.filter((f) => f.owaspCategory === "ASST-01");
 		expect(overrideFindings.length).toBeGreaterThan(0);
 	});
 
@@ -50,9 +48,7 @@ describe("analyzeInjection", () => {
 		const result = await analyzeInjection(skill);
 
 		expect(result.score).toBeLessThan(50);
-		const commentFindings = result.findings.filter(
-			(f) => f.id.includes("COMMENT"),
-		);
+		const commentFindings = result.findings.filter((f) => f.id.includes("COMMENT"));
 		expect(commentFindings.length).toBeGreaterThan(0);
 	});
 
@@ -60,9 +56,7 @@ describe("analyzeInjection", () => {
 		const skill = parseSkill(loadFixture("malicious-injection.md"));
 		const result = await analyzeInjection(skill);
 
-		const relayFindings = result.findings.filter(
-			(f) => f.owaspCategory === "ASST-06",
-		);
+		const relayFindings = result.findings.filter((f) => f.owaspCategory === "ASST-06");
 		expect(relayFindings.length).toBeGreaterThan(0);
 	});
 
@@ -70,9 +64,7 @@ describe("analyzeInjection", () => {
 		const skill = parseSkill(loadFixture("malicious-injection.md"));
 		const result = await analyzeInjection(skill);
 
-		const socialFindings = result.findings.filter(
-			(f) => f.owaspCategory === "ASST-07",
-		);
+		const socialFindings = result.findings.filter((f) => f.owaspCategory === "ASST-07");
 		expect(socialFindings.length).toBeGreaterThan(0);
 	});
 

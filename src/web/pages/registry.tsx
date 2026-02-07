@@ -63,9 +63,7 @@ registryApp.get("/registry", (c) => {
 						<div class="text-center py-16 text-gray-500">
 							<p class="text-5xl mb-4">📭</p>
 							<p class="text-xl mb-2">No skills found yet.</p>
-							<p class="mb-6">
-								Be the first to submit a skill for scanning.
-							</p>
+							<p class="mb-6">Be the first to submit a skill for scanning.</p>
 							<a
 								href="/submit"
 								class="bg-certified hover:bg-green-600 text-white px-6 py-3 rounded-lg font-medium transition"

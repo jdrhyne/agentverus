@@ -5,12 +5,16 @@ const submitApp = new Hono();
 
 submitApp.get("/submit", (c) => {
 	return c.html(
-		<BaseLayout title="Submit Skill" description="Submit an AI agent skill for trust scanning and certification.">
+		<BaseLayout
+			title="Submit Skill"
+			description="Submit an AI agent skill for trust scanning and certification."
+		>
 			<section class="py-12 px-4">
 				<div class="max-w-3xl mx-auto">
 					<h1 class="text-3xl font-bold mb-3">Submit a Skill for Scanning</h1>
 					<p class="text-gray-400 mb-8">
-						Paste your SKILL.md content or provide a URL. We'll analyze it for security threats and generate a trust report. <strong class="text-certified">Free.</strong>
+						Paste your SKILL.md content or provide a URL. We'll analyze it for security threats and
+						generate a trust report. <strong class="text-certified">Free.</strong>
 					</p>
 
 					<form id="scan-form" class="space-y-6">

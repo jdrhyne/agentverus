@@ -1,8 +1,12 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { aggregateScores } from "../../src/scanner/scoring.js";
 import type { Category, CategoryScore, ScanMetadata } from "../../src/scanner/types.js";
 
-function makeCategoryScore(score: number, weight: number, overrides?: Partial<CategoryScore>): CategoryScore {
+function makeCategoryScore(
+	score: number,
+	weight: number,
+	overrides?: Partial<CategoryScore>,
+): CategoryScore {
 	return {
 		score,
 		weight,
@@ -51,17 +55,19 @@ describe("aggregateScores", () => {
 		const categories: Record<Category, CategoryScore> = {
 			permissions: makeCategoryScore(95, 0.25),
 			injection: makeCategoryScore(95, 0.3, {
-				findings: [{
-					id: "TEST-CRIT",
-					category: "injection",
-					severity: "critical",
-					title: "Critical test",
-					description: "Test",
-					evidence: "test",
-					deduction: 5,
-					recommendation: "fix",
-					owaspCategory: "ASST-01",
-				}],
+				findings: [
+					{
+						id: "TEST-CRIT",
+						category: "injection",
+						severity: "critical",
+						title: "Critical test",
+						description: "Test",
+						evidence: "test",
+						deduction: 5,
+						recommendation: "fix",
+						owaspCategory: "ASST-01",
+					},
+				],
 			}),
 			dependencies: makeCategoryScore(95, 0.2),
 			behavioral: makeCategoryScore(95, 0.15),
@@ -89,17 +95,19 @@ describe("aggregateScores", () => {
 	it("should return CONDITIONAL for score 75-89 with ≤2 high findings", () => {
 		const categories: Record<Category, CategoryScore> = {
 			permissions: makeCategoryScore(80, 0.25, {
-				findings: [{
-					id: "TEST-HIGH",
-					category: "permissions",
-					severity: "high",
-					title: "High test",
-					description: "Test",
-					evidence: "test",
-					deduction: 15,
-					recommendation: "fix",
-					owaspCategory: "ASST-08",
-				}],
+				findings: [
+					{
+						id: "TEST-HIGH",
+						category: "permissions",
+						severity: "high",
+						title: "High test",
+						description: "Test",
+						evidence: "test",
+						deduction: 15,
+						recommendation: "fix",
+						owaspCategory: "ASST-08",
+					},
+				],
 			}),
 			injection: makeCategoryScore(85, 0.3),
 			dependencies: makeCategoryScore(80, 0.2),
@@ -116,26 +124,50 @@ describe("aggregateScores", () => {
 	it("should sort findings by severity (critical first)", () => {
 		const categories: Record<Category, CategoryScore> = {
 			permissions: makeCategoryScore(80, 0.25, {
-				findings: [{
-					id: "LOW-1", category: "permissions", severity: "low",
-					title: "Low", description: "t", evidence: "e", deduction: 3,
-					recommendation: "r", owaspCategory: "ASST-08",
-				}],
+				findings: [
+					{
+						id: "LOW-1",
+						category: "permissions",
+						severity: "low",
+						title: "Low",
+						description: "t",
+						evidence: "e",
+						deduction: 3,
+						recommendation: "r",
+						owaspCategory: "ASST-08",
+					},
+				],
 			}),
 			injection: makeCategoryScore(50, 0.3, {
-				findings: [{
-					id: "CRIT-1", category: "injection", severity: "critical",
-					title: "Critical", description: "t", evidence: "e", deduction: 40,
-					recommendation: "r", owaspCategory: "ASST-01",
-				}],
+				findings: [
+					{
+						id: "CRIT-1",
+						category: "injection",
+						severity: "critical",
+						title: "Critical",
+						description: "t",
+						evidence: "e",
+						deduction: 40,
+						recommendation: "r",
+						owaspCategory: "ASST-01",
+					},
+				],
 			}),
 			dependencies: makeCategoryScore(90, 0.2),
 			behavioral: makeCategoryScore(90, 0.15, {
-				findings: [{
-					id: "MED-1", category: "behavioral", severity: "medium",
-					title: "Medium", description: "t", evidence: "e", deduction: 10,
-					recommendation: "r", owaspCategory: "ASST-09",
-				}],
+				findings: [
+					{
+						id: "MED-1",
+						category: "behavioral",
+						severity: "medium",
+						title: "Medium",
+						description: "t",
+						evidence: "e",
+						deduction: 10,
+						recommendation: "r",
+						owaspCategory: "ASST-09",
+					},
+				],
 			}),
 			content: makeCategoryScore(80, 0.1),
 		};

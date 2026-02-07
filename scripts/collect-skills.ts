@@ -56,9 +56,7 @@ async function githubFetch(url: string): Promise<Response> {
 	const remaining = response.headers.get("x-ratelimit-remaining");
 	if (remaining && Number.parseInt(remaining) < 5) {
 		const resetAt = response.headers.get("x-ratelimit-reset");
-		const waitMs = resetAt
-			? (Number.parseInt(resetAt) * 1000 - Date.now() + 1000)
-			: 60_000;
+		const waitMs = resetAt ? Number.parseInt(resetAt) * 1000 - Date.now() + 1000 : 60_000;
 		console.log(`  Rate limit approaching, waiting ${Math.ceil(waitMs / 1000)}s...`);
 		await new Promise((resolve) => setTimeout(resolve, Math.max(waitMs, 1000)));
 	}
@@ -72,7 +70,8 @@ async function searchGitHub(query: string): Promise<string[]> {
 	let page = 1;
 	const perPage = 100;
 
-	while (page <= 10) { // GitHub limits to 1000 results
+	while (page <= 10) {
+		// GitHub limits to 1000 results
 		const searchUrl = `${GITHUB_API}/search/code?q=${encodeURIComponent(query)}&per_page=${perPage}&page=${page}`;
 
 		try {
@@ -134,7 +133,9 @@ async function checkKnownRepos(): Promise<string[]> {
 async function main(): Promise<void> {
 	console.log(`\n📥 AgentVerus Skill URL Collector`);
 	console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-	console.log(`  GitHub token: ${GITHUB_TOKEN ? "configured" : "not set (limited to 10 req/min)"}\n`);
+	console.log(
+		`  GitHub token: ${GITHUB_TOKEN ? "configured" : "not set (limited to 10 req/min)"}\n`,
+	);
 
 	const allUrls: string[] = [];
 

@@ -22,10 +22,7 @@ function normalizeSkillKey(source: string, skillId: string): string {
 	return `${source.toLowerCase()}/${skillId.toLowerCase()}`;
 }
 
-function extractBracketedArrayLiteral(
-	input: string,
-	marker: string,
-): string | null {
+function extractBracketedArrayLiteral(input: string, marker: string): string | null {
 	const markerIndex = input.indexOf(marker);
 	if (markerIndex === -1) return null;
 
@@ -55,7 +52,7 @@ function extractBracketedArrayLiteral(
 
 		if (inDouble) {
 			if (ch === "\\\\") escape = true;
-			else if (ch === "\"") inDouble = false;
+			else if (ch === '"') inDouble = false;
 			continue;
 		}
 
@@ -69,7 +66,7 @@ function extractBracketedArrayLiteral(
 			inSingle = true;
 			continue;
 		}
-		if (ch === "\"") {
+		if (ch === '"') {
 			inDouble = true;
 			continue;
 		}
@@ -94,8 +91,7 @@ function extractBracketedArrayLiteral(
 }
 
 function parseSkillsShHtml(html: string): readonly SkillsShEntry[] {
-	const initialSkillsArray =
-		extractBracketedArrayLiteral(html, "initialSkills") ?? "";
+	const initialSkillsArray = extractBracketedArrayLiteral(html, "initialSkills") ?? "";
 
 	const region = initialSkillsArray.length > 0 ? initialSkillsArray : html;
 	const objects = region.match(/\{[^{}]*\}/g) ?? [];

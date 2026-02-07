@@ -1,8 +1,8 @@
-import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { parseSkill } from "../../src/scanner/parser.js";
+import { describe, expect, it } from "vitest";
 import { analyzeBehavioral } from "../../src/scanner/analyzers/behavioral.js";
+import { parseSkill } from "../../src/scanner/parser.js";
 
 const FIXTURES_DIR = join(__dirname, "../fixtures/skills");
 
@@ -24,9 +24,7 @@ describe("analyzeBehavioral", () => {
 		const result = await analyzeBehavioral(skill);
 
 		expect(result.score).toBeLessThan(80);
-		const sysModFindings = result.findings.filter(
-			(f) => f.owaspCategory === "ASST-03",
-		);
+		const sysModFindings = result.findings.filter((f) => f.owaspCategory === "ASST-03");
 		expect(sysModFindings.length).toBeGreaterThan(0);
 	});
 
@@ -35,7 +33,8 @@ describe("analyzeBehavioral", () => {
 		const result = await analyzeBehavioral(skill);
 
 		const spawnFindings = result.findings.filter(
-			(f) => f.title.toLowerCase().includes("sub-agent") || f.title.toLowerCase().includes("spawning"),
+			(f) =>
+				f.title.toLowerCase().includes("sub-agent") || f.title.toLowerCase().includes("spawning"),
 		);
 		expect(spawnFindings.length).toBeGreaterThanOrEqual(0);
 	});

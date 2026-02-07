@@ -4,12 +4,14 @@ import { applyDeclaredPermissions } from "./declared-match.js";
 /** Harmful content patterns */
 const HARMFUL_PATTERNS = [
 	{
-		pattern: /(?:generate|create|write|produce)\s+(?:a\s+)?(?:malware|virus|trojan|ransomware|keylogger|rootkit)/i,
+		pattern:
+			/(?:generate|create|write|produce)\s+(?:a\s+)?(?:malware|virus|trojan|ransomware|keylogger|rootkit)/i,
 		title: "Malware generation instructions",
 		deduction: 40,
 	},
 	{
-		pattern: /(?:bypass|circumvent|disable)\s+(?:security|firewall|antivirus|protection|authentication)/i,
+		pattern:
+			/(?:bypass|circumvent|disable)\s+(?:security|firewall|antivirus|protection|authentication)/i,
 		title: "Security bypass instructions",
 		deduction: 40,
 	},
@@ -58,17 +60,13 @@ const ERROR_HANDLING_PATTERNS = [
 ] as const;
 
 /** Analyze content quality and safety boundaries */
-export async function analyzeContent(
-	skill: ParsedSkill,
-): Promise<CategoryScore> {
+export async function analyzeContent(skill: ParsedSkill): Promise<CategoryScore> {
 	const findings: Finding[] = [];
 	let score = 80; // Start at 80, skills must earn the top 20
 	const content = skill.rawContent;
 
 	// Award bonus points for good practices
-	const hasSafetyBoundaries = SAFETY_BOUNDARY_PATTERNS.some((p) =>
-		p.test(content),
-	);
+	const hasSafetyBoundaries = SAFETY_BOUNDARY_PATTERNS.some((p) => p.test(content));
 	if (hasSafetyBoundaries) {
 		score = Math.min(100, score + 10);
 		findings.push({
@@ -76,8 +74,7 @@ export async function analyzeContent(
 			category: "content",
 			severity: "info",
 			title: "Safety boundaries defined",
-			description:
-				"The skill includes explicit safety boundaries defining what it should NOT do.",
+			description: "The skill includes explicit safety boundaries defining what it should NOT do.",
 			evidence: "Safety boundary patterns detected in content",
 			deduction: 0,
 			recommendation: "Keep these safety boundaries. They improve trust.",
@@ -85,9 +82,7 @@ export async function analyzeContent(
 		});
 	}
 
-	const hasOutputConstraints = OUTPUT_CONSTRAINT_PATTERNS.some((p) =>
-		p.test(content),
-	);
+	const hasOutputConstraints = OUTPUT_CONSTRAINT_PATTERNS.some((p) => p.test(content));
 	if (hasOutputConstraints) {
 		score = Math.min(100, score + 5);
 		findings.push({
@@ -104,9 +99,7 @@ export async function analyzeContent(
 		});
 	}
 
-	const hasErrorHandling = ERROR_HANDLING_PATTERNS.some((p) =>
-		p.test(content),
-	);
+	const hasErrorHandling = ERROR_HANDLING_PATTERNS.some((p) => p.test(content));
 	if (hasErrorHandling) {
 		score = Math.min(100, score + 5);
 		findings.push({
@@ -114,8 +107,7 @@ export async function analyzeContent(
 			category: "content",
 			severity: "info",
 			title: "Error handling instructions present",
-			description:
-				"The skill includes error handling instructions for graceful failure.",
+			description: "The skill includes error handling instructions for graceful failure.",
 			evidence: "Error handling patterns detected",
 			deduction: 0,
 			recommendation: "Keep these error handling instructions.",
@@ -127,8 +119,7 @@ export async function analyzeContent(
 	for (const harmful of HARMFUL_PATTERNS) {
 		const match = content.match(harmful.pattern);
 		if (match) {
-			const lineNumber =
-				content.slice(0, content.indexOf(match[0])).split("\n").length;
+			const lineNumber = content.slice(0, content.indexOf(match[0])).split("\n").length;
 			score = Math.max(0, score - harmful.deduction);
 
 			findings.push({
@@ -157,12 +148,10 @@ export async function analyzeContent(
 				category: "content",
 				severity: "medium",
 				title: "Deceptive behavior instructions",
-				description:
-					"The skill contains instructions that encourage deception or impersonation.",
+				description: "The skill contains instructions that encourage deception or impersonation.",
 				evidence: match[0].slice(0, 200),
 				deduction: 10,
-				recommendation:
-					"Remove deceptive behavior instructions. Skills should be transparent.",
+				recommendation: "Remove deceptive behavior instructions. Skills should be transparent.",
 				owaspCategory: "ASST-07",
 			});
 		}
@@ -204,13 +193,11 @@ export async function analyzeContent(
 			category: "content",
 			severity: "medium",
 			title: "Hex-encoded blob (possible obfuscation)",
-			description:
-				"A hex-encoded blob was detected that may be used to hide malicious payloads.",
+			description: "A hex-encoded blob was detected that may be used to hide malicious payloads.",
 			evidence: hexMatch[0].slice(0, 80) + "...",
 			lineNumber,
 			deduction: 15,
-			recommendation:
-				"Replace hex-encoded content with plaintext or explain its purpose.",
+			recommendation: "Replace hex-encoded content with plaintext or explain its purpose.",
 			owaspCategory: "ASST-10",
 		});
 		break;
@@ -221,7 +208,10 @@ export async function analyzeContent(
 		{ regex: /(?:AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}/g, name: "AWS key" },
 		{ regex: /ghp_[A-Za-z0-9]{36}/g, name: "GitHub token" },
 		{ regex: /(?:sk|pk)_(?:live|test)_[A-Za-z0-9]{24,}/g, name: "Stripe key" },
-		{ regex: /(?:api[_-]?key|secret[_-]?key|access[_-]?token)\s*[:=]\s*["'][A-Za-z0-9]{32,}["']/gi, name: "Generic API key" },
+		{
+			regex: /(?:api[_-]?key|secret[_-]?key|access[_-]?token)\s*[:=]\s*["'][A-Za-z0-9]{32,}["']/gi,
+			name: "Generic API key",
+		},
 	];
 	for (const keyPattern of apiKeyPatterns) {
 		let keyMatch: RegExpExecArray | null;

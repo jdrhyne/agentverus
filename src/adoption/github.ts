@@ -9,10 +9,7 @@ export interface RepoSignals {
 	pushedAt: Date;
 }
 
-export async function fetchRepoSignals(
-	owner: string,
-	repo: string,
-): Promise<RepoSignals | null> {
+export async function fetchRepoSignals(owner: string, repo: string): Promise<RepoSignals | null> {
 	const token = process.env.GITHUB_TOKEN;
 
 	const headers: Record<string, string> = {
@@ -67,4 +64,3 @@ export async function fetchRepoSignals(
 		return null;
 	}
 }
-

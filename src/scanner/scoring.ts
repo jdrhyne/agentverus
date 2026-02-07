@@ -74,10 +74,7 @@ export function aggregateScores(
 	// Collect all findings and sort by severity
 	const allFindings: Finding[] = Object.values(categories)
 		.flatMap((cat) => [...cat.findings])
-		.sort(
-			(a, b) =>
-				(SEVERITY_ORDER[a.severity] ?? 4) - (SEVERITY_ORDER[b.severity] ?? 4),
-		);
+		.sort((a, b) => (SEVERITY_ORDER[a.severity] ?? 4) - (SEVERITY_ORDER[b.severity] ?? 4));
 
 	// Determine badge tier
 	const badge = determineBadge(overall, allFindings);

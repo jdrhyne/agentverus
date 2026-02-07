@@ -1,9 +1,9 @@
-import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { parseSkill } from "../../src/scanner/parser.js";
-import { analyzePermissions } from "../../src/scanner/analyzers/permissions.js";
+import { describe, expect, it } from "vitest";
 import { analyzeInjection } from "../../src/scanner/analyzers/injection.js";
+import { analyzePermissions } from "../../src/scanner/analyzers/permissions.js";
+import { parseSkill } from "../../src/scanner/parser.js";
 
 const FIXTURES_DIR = join(__dirname, "../fixtures/skills");
 
@@ -48,9 +48,7 @@ describe("analyzePermissions", () => {
 		const skill = parseSkill(loadFixture("malicious-escalation.md"));
 		const result = await analyzePermissions(skill);
 
-		const mismatchFindings = result.findings.filter(
-			(f) => f.id.includes("MISMATCH"),
-		);
+		const mismatchFindings = result.findings.filter((f) => f.id.includes("MISMATCH"));
 		expect(mismatchFindings.length).toBeGreaterThan(0);
 	});
 

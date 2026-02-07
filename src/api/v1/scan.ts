@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod/v4";
-import { scanSkill } from "../../scanner/index.js";
 import { sha256 } from "../../lib/utils.js";
+import { scanSkill } from "../../scanner/index.js";
 import { ValidationError } from "../middleware/errors.js";
 
 const scanApp = new Hono();

@@ -41,9 +41,15 @@ export const BaseLayout: FC<BaseLayoutProps> = ({ title, description, children }
 							<span class="text-2xl">🛡️</span> AgentVerus
 						</a>
 						<div class="flex items-center gap-6">
-							<a href="/registry" class="text-gray-300 hover:text-white transition">Registry</a>
-							<a href="/submit" class="text-gray-300 hover:text-white transition">Submit Skill</a>
-							<a href="/docs" class="text-gray-300 hover:text-white transition">API Docs</a>
+							<a href="/registry" class="text-gray-300 hover:text-white transition">
+								Registry
+							</a>
+							<a href="/submit" class="text-gray-300 hover:text-white transition">
+								Submit Skill
+							</a>
+							<a href="/docs" class="text-gray-300 hover:text-white transition">
+								API Docs
+							</a>
 							<a
 								href="/submit"
 								class="bg-certified hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition"
@@ -60,7 +66,9 @@ export const BaseLayout: FC<BaseLayoutProps> = ({ title, description, children }
 					<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
 						<p class="text-gray-500 text-sm">© 2026 AgentVerus. Trust, but verify.</p>
 						<div class="flex gap-6">
-							<a href="/docs" class="text-gray-500 hover:text-gray-300 text-sm transition">API</a>
+							<a href="/docs" class="text-gray-500 hover:text-gray-300 text-sm transition">
+								API
+							</a>
 							<a
 								href="https://github.com/agentverus"
 								class="text-gray-500 hover:text-gray-300 text-sm transition"

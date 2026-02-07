@@ -1,27 +1,23 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
-
-// API routes
-import { scanApp } from "./api/v1/scan.js";
-import { trustApp } from "./api/v1/trust.js";
-import { skillsApp } from "./api/v1/skills.js";
+import { errorHandler } from "./api/middleware/errors.js";
+// Middleware
+import { rateLimit } from "./api/middleware/rateLimit.js";
 import { badgeApp } from "./api/v1/badge.js";
 import { certifyApp } from "./api/v1/certify.js";
-
+// API routes
+import { scanApp } from "./api/v1/scan.js";
+import { skillsApp } from "./api/v1/skills.js";
+import { trustApp } from "./api/v1/trust.js";
+// Crypto
+import { getPublicKeyPem } from "./lib/crypto.js";
+import { docsApp } from "./web/pages/docs.js";
 // Web pages
 import { homeApp } from "./web/pages/home.js";
 import { registryApp } from "./web/pages/registry.js";
-import { submitApp } from "./web/pages/submit.js";
-import { docsApp } from "./web/pages/docs.js";
 import { statsApp } from "./web/pages/stats.js";
-
-// Crypto
-import { getPublicKeyPem } from "./lib/crypto.js";
-
-// Middleware
-import { rateLimit } from "./api/middleware/rateLimit.js";
-import { errorHandler } from "./api/middleware/errors.js";
+import { submitApp } from "./web/pages/submit.js";
 
 const app = new Hono();
 
@@ -61,10 +57,7 @@ app.onError(errorHandler);
 // 404 handlers
 app.notFound((c) => {
 	if (c.req.path.startsWith("/api/")) {
-		return c.json(
-			{ error: { code: "NOT_FOUND", message: "Endpoint not found" } },
-			404,
-		);
+		return c.json({ error: { code: "NOT_FOUND", message: "Endpoint not found" } }, 404);
 	}
 	return c.text("Not Found", 404);
 });

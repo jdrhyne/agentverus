@@ -1,8 +1,4 @@
-export type AdoptionTier =
-	| "widely_used"
-	| "gaining_adoption"
-	| "early"
-	| "not_adopted";
+export type AdoptionTier = "widely_used" | "gaining_adoption" | "early" | "not_adopted";
 
 export interface AdoptionSignals {
 	installs: number;
@@ -20,4 +16,3 @@ export interface AdoptionScore {
 	combined: number;
 	tier: AdoptionTier;
 }
-

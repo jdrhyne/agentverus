@@ -153,9 +153,7 @@ function detectHtmlCommentInjections(content: string): Finding[] {
 			/(?:step|override|important|system|silently|secretly|do not|must|always|never|after|before)\s/i.test(
 				commentContent,
 			) ||
-			/(?:send|post|read|write|execute|fetch|curl|delete|access|download)\s/i.test(
-				commentContent,
-			);
+			/(?:send|post|read|write|execute|fetch|curl|delete|access|download)\s/i.test(commentContent);
 
 		if (isInstructional) {
 			const lineNumber = content.slice(0, match.index).split("\n").length;
@@ -204,8 +202,7 @@ function detectBase64Payloads(content: string): Finding[] {
 					category: "injection",
 					severity: "high",
 					title: "Suspicious base64-encoded content",
-					description:
-						"Base64-encoded string decodes to content containing suspicious keywords.",
+					description: "Base64-encoded string decodes to content containing suspicious keywords.",
 					evidence: `Encoded: ${encoded.slice(0, 60)}... → Decoded: ${decoded.slice(0, 100)}...`,
 					lineNumber,
 					deduction: 25,
@@ -265,9 +262,7 @@ function detectUnicodeObfuscation(content: string): Finding[] {
 }
 
 /** Analyze skill for instruction injection patterns */
-export async function analyzeInjection(
-	skill: ParsedSkill,
-): Promise<CategoryScore> {
+export async function analyzeInjection(skill: ParsedSkill): Promise<CategoryScore> {
 	const findings: Finding[] = [];
 	let score = 100;
 	const content = skill.rawContent;

@@ -1,27 +1,17 @@
-import { parseSkill } from "./parser.js";
-import { aggregateScores } from "./scoring.js";
-import type {
-	Category,
-	CategoryScore,
-	ScanMetadata,
-	ScanOptions,
-	TrustReport,
-} from "./types.js";
-import { SCANNER_VERSION } from "./types.js";
-import { analyzePermissions } from "./analyzers/permissions.js";
-import { analyzeInjection } from "./analyzers/injection.js";
-import { analyzeDependencies } from "./analyzers/dependencies.js";
 import { analyzeBehavioral } from "./analyzers/behavioral.js";
 import { analyzeContent } from "./analyzers/content.js";
+import { analyzeDependencies } from "./analyzers/dependencies.js";
+import { analyzeInjection } from "./analyzers/injection.js";
+import { analyzePermissions } from "./analyzers/permissions.js";
+import { parseSkill } from "./parser.js";
+import { aggregateScores } from "./scoring.js";
+import type { Category, CategoryScore, ScanMetadata, ScanOptions, TrustReport } from "./types.js";
+import { SCANNER_VERSION } from "./types.js";
 
 /**
  * Create a fallback CategoryScore when an analyzer fails
  */
-function fallbackScore(
-	category: Category,
-	weight: number,
-	error: unknown,
-): CategoryScore {
+function fallbackScore(category: Category, weight: number, error: unknown): CategoryScore {
 	const message = error instanceof Error ? error.message : "Unknown error";
 	return {
 		score: 50,
@@ -35,8 +25,7 @@ function fallbackScore(
 				description: `The ${category} analyzer encountered an error: ${message}. A default score of 50 was assigned.`,
 				evidence: message,
 				deduction: 0,
-				recommendation:
-					"This may indicate an issue with the skill file format. Try re-scanning.",
+				recommendation: "This may indicate an issue with the skill file format. Try re-scanning.",
 				owaspCategory: "ASST-09",
 			},
 		],
@@ -48,32 +37,18 @@ function fallbackScore(
  * Scan a skill from raw content string.
  * Parses the skill, runs all analyzers in parallel, and aggregates results.
  */
-export async function scanSkill(
-	content: string,
-	_options?: ScanOptions,
-): Promise<TrustReport> {
+export async function scanSkill(content: string, _options?: ScanOptions): Promise<TrustReport> {
 	const startTime = Date.now();
 	const skill = parseSkill(content);
 
 	// Run all analyzers in parallel with error handling
-	const [permissions, injection, dependencies, behavioral, contentResult] =
-		await Promise.all([
-			analyzePermissions(skill).catch((e) =>
-				fallbackScore("permissions", 0.25, e),
-			),
-			analyzeInjection(skill).catch((e) =>
-				fallbackScore("injection", 0.3, e),
-			),
-			analyzeDependencies(skill).catch((e) =>
-				fallbackScore("dependencies", 0.2, e),
-			),
-			analyzeBehavioral(skill).catch((e) =>
-				fallbackScore("behavioral", 0.15, e),
-			),
-			analyzeContent(skill).catch((e) =>
-				fallbackScore("content", 0.1, e),
-			),
-		]);
+	const [permissions, injection, dependencies, behavioral, contentResult] = await Promise.all([
+		analyzePermissions(skill).catch((e) => fallbackScore("permissions", 0.25, e)),
+		analyzeInjection(skill).catch((e) => fallbackScore("injection", 0.3, e)),
+		analyzeDependencies(skill).catch((e) => fallbackScore("dependencies", 0.2, e)),
+		analyzeBehavioral(skill).catch((e) => fallbackScore("behavioral", 0.15, e)),
+		analyzeContent(skill).catch((e) => fallbackScore("content", 0.1, e)),
+	]);
 
 	const durationMs = Date.now() - startTime;
 
@@ -99,20 +74,13 @@ export async function scanSkill(
  * Scan a skill from a URL.
  * Fetches the content first, then runs the scanner.
  */
-export async function scanSkillFromUrl(
-	url: string,
-	options?: ScanOptions,
-): Promise<TrustReport> {
+export async function scanSkillFromUrl(url: string, options?: ScanOptions): Promise<TrustReport> {
 	const response = await fetch(url, {
-		signal: options?.timeout
-			? AbortSignal.timeout(options.timeout)
-			: undefined,
+		signal: options?.timeout ? AbortSignal.timeout(options.timeout) : undefined,
 	});
 
 	if (!response.ok) {
-		throw new Error(
-			`Failed to fetch skill from ${url}: ${response.status} ${response.statusText}`,
-		);
+		throw new Error(`Failed to fetch skill from ${url}: ${response.status} ${response.statusText}`);
 	}
 
 	const content = await response.text();
@@ -122,12 +90,12 @@ export async function scanSkillFromUrl(
 export { parseSkill } from "./parser.js";
 export { aggregateScores } from "./scoring.js";
 export type {
-	TrustReport,
-	ParsedSkill,
-	Finding,
-	CategoryScore,
 	BadgeTier,
 	Category,
-	Severity,
+	CategoryScore,
+	Finding,
+	ParsedSkill,
 	ScanOptions,
+	Severity,
+	TrustReport,
 } from "./types.js";

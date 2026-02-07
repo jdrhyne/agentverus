@@ -1,5 +1,5 @@
-import type { Context, Next } from "hono";
 import { createHash, randomBytes } from "node:crypto";
+import type { Context, Next } from "hono";
 import { AuthError, ForbiddenError, RateLimitError } from "./errors.js";
 
 interface ApiKeyRecord {
@@ -35,13 +35,12 @@ export function requireAuth(level: "authenticated" | "admin") {
 		const authHeader = c.req.header("authorization");
 		const apiKeyHeader = c.req.header("x-api-key");
 
-		const rawKey =
-			authHeader?.startsWith("Bearer ")
-				? authHeader.slice(7)
-				: apiKeyHeader;
+		const rawKey = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : apiKeyHeader;
 
 		if (!rawKey) {
-			throw new AuthError("API key required. Pass via Authorization: Bearer <key> or X-API-Key header.");
+			throw new AuthError(
+				"API key required. Pass via Authorization: Bearer <key> or X-API-Key header.",
+			);
 		}
 
 		const keyHash = hashApiKey(rawKey);

@@ -1,8 +1,4 @@
-import {
-	createSign,
-	createVerify,
-	generateKeyPairSync,
-} from "node:crypto";
+import { createSign, createVerify, generateKeyPairSync } from "node:crypto";
 
 interface AttestationData {
 	readonly skillId: string;
@@ -82,10 +78,7 @@ export function verifyAttestation(attestationBase64: string): boolean {
 		const keyPair = getOrCreateKeyPair();
 		if (!keyPair.publicKey) return false;
 
-		const canonicalJson = JSON.stringify(
-			decoded.data,
-			Object.keys(decoded.data).sort(),
-		);
+		const canonicalJson = JSON.stringify(decoded.data, Object.keys(decoded.data).sort());
 
 		const verify = createVerify("SHA256");
 		verify.update(canonicalJson);

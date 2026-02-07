@@ -10,20 +10,22 @@ docsApp.get("/docs", (c) => {
 				<div class="max-w-4xl mx-auto">
 					<h1 class="text-3xl font-bold mb-3">API Documentation</h1>
 					<p class="text-gray-400 mb-8">
-						The AgentVerus REST API. Base URL: <code class="bg-gray-800 px-2 py-1 rounded text-certified">{c.req.url.split("/docs")[0]}/api/v1</code>
+						The AgentVerus REST API. Base URL:{" "}
+						<code class="bg-gray-800 px-2 py-1 rounded text-certified">
+							{c.req.url.split("/docs")[0]}/api/v1
+						</code>
 					</p>
 
 					{/* Authentication */}
 					<div class="mb-12">
 						<h2 class="text-2xl font-semibold mb-4">Authentication</h2>
-						<p class="text-gray-400 mb-3">
-							Some endpoints require an API key. Pass it via header:
-						</p>
+						<p class="text-gray-400 mb-3">Some endpoints require an API key. Pass it via header:</p>
 						<pre class="bg-gray-900 border border-gray-800 rounded-lg p-4 text-sm overflow-x-auto mb-4">
 							<code class="text-green-400">Authorization: Bearer at_your_api_key_here</code>
 						</pre>
 						<p class="text-gray-400">
-							Public endpoints (GET) don't require authentication. POST endpoints require a valid API key.
+							Public endpoints (GET) don't require authentication. POST endpoints require a valid
+							API key.
 						</p>
 					</div>
 
@@ -114,7 +116,9 @@ docsApp.get("/docs", (c) => {
 							<div class="flex items-center gap-3 mb-3">
 								<span
 									class={`px-3 py-1 rounded text-sm font-bold ${
-										endpoint.method === "GET" ? "bg-green-700 text-green-100" : "bg-blue-700 text-blue-100"
+										endpoint.method === "GET"
+											? "bg-green-700 text-green-100"
+											: "bg-blue-700 text-blue-100"
 									}`}
 								>
 									{endpoint.method}
@@ -200,12 +204,36 @@ docsApp.get("/docs", (c) => {
 									</tr>
 								</thead>
 								<tbody class="text-gray-400">
-									<tr class="border-b border-gray-800"><td class="py-2">VALIDATION_ERROR</td><td>400</td><td>Invalid request body or parameters</td></tr>
-									<tr class="border-b border-gray-800"><td class="py-2">UNAUTHORIZED</td><td>401</td><td>Missing or invalid API key</td></tr>
-									<tr class="border-b border-gray-800"><td class="py-2">FORBIDDEN</td><td>403</td><td>Insufficient permissions</td></tr>
-									<tr class="border-b border-gray-800"><td class="py-2">NOT_FOUND</td><td>404</td><td>Resource not found</td></tr>
-									<tr class="border-b border-gray-800"><td class="py-2">RATE_LIMIT_EXCEEDED</td><td>429</td><td>Too many requests</td></tr>
-									<tr><td class="py-2">INTERNAL_ERROR</td><td>500</td><td>Server error</td></tr>
+									<tr class="border-b border-gray-800">
+										<td class="py-2">VALIDATION_ERROR</td>
+										<td>400</td>
+										<td>Invalid request body or parameters</td>
+									</tr>
+									<tr class="border-b border-gray-800">
+										<td class="py-2">UNAUTHORIZED</td>
+										<td>401</td>
+										<td>Missing or invalid API key</td>
+									</tr>
+									<tr class="border-b border-gray-800">
+										<td class="py-2">FORBIDDEN</td>
+										<td>403</td>
+										<td>Insufficient permissions</td>
+									</tr>
+									<tr class="border-b border-gray-800">
+										<td class="py-2">NOT_FOUND</td>
+										<td>404</td>
+										<td>Resource not found</td>
+									</tr>
+									<tr class="border-b border-gray-800">
+										<td class="py-2">RATE_LIMIT_EXCEEDED</td>
+										<td>429</td>
+										<td>Too many requests</td>
+									</tr>
+									<tr>
+										<td class="py-2">INTERNAL_ERROR</td>
+										<td>500</td>
+										<td>Server error</td>
+									</tr>
 								</tbody>
 							</table>
 						</div>

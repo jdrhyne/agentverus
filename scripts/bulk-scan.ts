@@ -3,10 +3,10 @@
  * Bulk scan script — scans multiple skill files and prints summary.
  * Usage: pnpm bulk-scan <file-with-urls> or pnpm bulk-scan <directory>
  */
-import { readFileSync, readdirSync, statSync } from "node:fs";
-import { join, extname } from "node:path";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { extname, join } from "node:path";
 import { scanSkill } from "../src/scanner/index.js";
-import type { TrustReport, BadgeTier } from "../src/scanner/types.js";
+import type { BadgeTier, TrustReport } from "../src/scanner/types.js";
 
 const CONCURRENCY = 5;
 const DELAY_BETWEEN_BATCHES_MS = 100;
@@ -36,9 +36,7 @@ async function withConcurrency<T, R>(
 		}
 	}
 
-	const workers = Array.from({ length: Math.min(limit, items.length) }, () =>
-		worker(),
-	);
+	const workers = Array.from({ length: Math.min(limit, items.length) }, () => worker());
 	await Promise.all(workers);
 	return results;
 }
@@ -115,7 +113,9 @@ async function main(): Promise<void> {
 			console.log(`  ❌ ${path}: ${result.error}`);
 		} else if (result.report) {
 			const badge = result.report.badge.toUpperCase().padEnd(12);
-			console.log(`  ${result.report.badge === "certified" ? "✅" : result.report.badge === "conditional" ? "🟡" : result.report.badge === "suspicious" ? "🟠" : "🔴"} ${badge} ${result.report.overall}/100  ${path}`);
+			console.log(
+				`  ${result.report.badge === "certified" ? "✅" : result.report.badge === "conditional" ? "🟡" : result.report.badge === "suspicious" ? "🟠" : "🔴"} ${badge} ${result.report.overall}/100  ${path}`,
+			);
 		}
 
 		// Delay between items
@@ -127,11 +127,14 @@ async function main(): Promise<void> {
 	const durationMs = Date.now() - startTime;
 
 	// Summary
-	const successful = results.filter((r): r is ScanResult & { report: TrustReport } => r.report !== null);
+	const successful = results.filter(
+		(r): r is ScanResult & { report: TrustReport } => r.report !== null,
+	);
 	const failed = results.filter((r) => r.error !== null);
 
 	const scores = successful.map((r) => r.report.overall);
-	const avgScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+	const avgScore =
+		scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
 
 	const gradeDistribution: Record<BadgeTier, number> = {
 		certified: 0,
@@ -160,12 +163,22 @@ async function main(): Promise<void> {
 	console.log(`  Duration:          ${(durationMs / 1000).toFixed(1)}s`);
 	console.log();
 	console.log(`  Badge Distribution:`);
-	console.log(`    ✅ CERTIFIED:    ${gradeDistribution.certified} (${pct(gradeDistribution.certified, successful.length)}%)`);
-	console.log(`    🟡 CONDITIONAL:  ${gradeDistribution.conditional} (${pct(gradeDistribution.conditional, successful.length)}%)`);
-	console.log(`    🟠 SUSPICIOUS:   ${gradeDistribution.suspicious} (${pct(gradeDistribution.suspicious, successful.length)}%)`);
-	console.log(`    🔴 REJECTED:     ${gradeDistribution.rejected} (${pct(gradeDistribution.rejected, successful.length)}%)`);
+	console.log(
+		`    ✅ CERTIFIED:    ${gradeDistribution.certified} (${pct(gradeDistribution.certified, successful.length)}%)`,
+	);
+	console.log(
+		`    🟡 CONDITIONAL:  ${gradeDistribution.conditional} (${pct(gradeDistribution.conditional, successful.length)}%)`,
+	);
+	console.log(
+		`    🟠 SUSPICIOUS:   ${gradeDistribution.suspicious} (${pct(gradeDistribution.suspicious, successful.length)}%)`,
+	);
+	console.log(
+		`    🔴 REJECTED:     ${gradeDistribution.rejected} (${pct(gradeDistribution.rejected, successful.length)}%)`,
+	);
 	console.log();
-	console.log(`  With critical findings: ${criticalCount} (${pct(criticalCount, successful.length)}%)`);
+	console.log(
+		`  With critical findings: ${criticalCount} (${pct(criticalCount, successful.length)}%)`,
+	);
 	console.log(`  With high findings:     ${highCount} (${pct(highCount, successful.length)}%)`);
 	console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
 }
