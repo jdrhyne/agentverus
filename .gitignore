@@ -1,6 +1,9 @@
 node_modules/
-dist/
+/dist/
+packages/*/dist/
 *.tsbuildinfo
+packages/*/*.tsbuildinfo
 .env
 .env.*
 coverage/
+data/

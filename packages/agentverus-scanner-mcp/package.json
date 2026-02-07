@@ -1,0 +1,38 @@
+{
+	"name": "agentverus-scanner-mcp",
+	"version": "0.1.0",
+	"description": "MCP server wrapper for AgentVerus Scanner (scan SKILL.md via MCP tools)",
+	"type": "module",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/agentverus/agentverus-scanner.git"
+	},
+	"engines": {
+		"node": ">=22"
+	},
+	"bin": {
+		"agentverus-scanner-mcp": "./dist/server.js"
+	},
+	"files": [
+		"dist",
+		"README.md",
+		"LICENSE.md"
+	],
+	"scripts": {
+		"dev": "tsx src/server.ts",
+		"build": "tsc",
+		"typecheck": "tsc --noEmit",
+		"prepublishOnly": "pnpm build"
+	},
+	"dependencies": {
+		"@modelcontextprotocol/sdk": "^1.26.0",
+		"agentverus-scanner": "workspace:*",
+		"zod": "^4.3.6"
+	},
+	"devDependencies": {
+		"@types/node": "^25.2.1",
+		"tsx": "^4.21.0",
+		"typescript": "^5.9.3"
+	}
+}
