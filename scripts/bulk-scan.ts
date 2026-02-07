@@ -10,7 +10,9 @@ import type { BadgeTier, TrustReport } from "../src/scanner/types.js";
 
 const CONCURRENCY = 5;
 const DELAY_BETWEEN_BATCHES_MS = 100;
-const FETCH_TIMEOUT_MS = 30_000;
+const FETCH_TIMEOUT_MS = 45_000;
+const FETCH_RETRIES = 2;
+const FETCH_RETRY_DELAY_MS = 750;
 
 interface ScanResult {
 	readonly path: string;
@@ -46,7 +48,11 @@ async function withConcurrency<T, R>(
 async function scanOne(path: string): Promise<ScanResult> {
 	try {
 		if (path.startsWith("http")) {
-			const report = await scanSkillFromUrl(path, { timeout: FETCH_TIMEOUT_MS });
+			const report = await scanSkillFromUrl(path, {
+				timeout: FETCH_TIMEOUT_MS,
+				retries: FETCH_RETRIES,
+				retryDelayMs: FETCH_RETRY_DELAY_MS,
+			});
 			return { path, report, error: null };
 		}
 
