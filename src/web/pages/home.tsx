@@ -157,7 +157,7 @@ homeApp.get("/", (c) => {
 								<img
 									src={feature.icon}
 									alt={feature.title}
-									class="w-8 h-8 mb-4 opacity-60"
+									class="w-12 h-12 mb-4 rounded-lg"
 								/>
 								<h3 class="text-sm font-bold uppercase tracking-wider mb-2">{feature.title}</h3>
 								<p class="text-white/50 text-xs leading-relaxed">{feature.desc}</p>
