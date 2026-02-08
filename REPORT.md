@@ -16,9 +16,9 @@ The results reveal a significant gap in the current security posture of the regi
 |--------|-------|
 | Skills scanned | 4,923 of 4,929 |
 | Scan failures | 6 (0.1%) |
-| Average trust score | 96/100 |
+| Average trust score | 97/100 |
 | Median trust score | 97/100 |
-| Total scan time | 1m 19s at 50x concurrency |
+| Total scan time | 1m 40s at 50x concurrency |
 
 ### Trust Badge Distribution
 
@@ -37,8 +37,8 @@ The results reveal a significant gap in the current security posture of the regi
 | 20-39 | 0 | 0.0% |
 | 40-59 | 0 | 0.0% |
 | 60-79 | 9 | 0.2% |
-| 80-89 | 68 | 1.4% |
-| 90-100 | 4846 | 98.4% |
+| 80-89 | 54 | 1.1% |
+| 90-100 | 4860 | 98.7% |
 
 ## The VirusTotal Gap
 
@@ -66,18 +66,18 @@ AgentVerus found **100 skills** with critical or high-severity text-based threat
 | `clawdefender` | 72 | SUSPICIOUS | Direct instruction override detected (inside code block) | ASST-01 |
 | `ecap-security-auditor` | 76 | CONDITIONAL | Credential access detected | ASST-05 |
 | `gdpr-cookie-consent` | 80 | CONDITIONAL | Hidden instructions in HTML comment | ASST-01 |
-| `next-browser` | 80 | CONDITIONAL | Credential access detected | ASST-05 |
 | `moltbook-agi` | 82 | CONDITIONAL | Credential access detected | ASST-05 |
 | `proactive-solvr` | 82 | CONDITIONAL | Direct instruction override detected (inside code block) | ASST-01 |
+| `next-browser` | 82 | CONDITIONAL | Credential access detected | ASST-05 |
 | `antivirus` | 83 | CONDITIONAL | Data exfiltration instruction detected (inside code block) | ASST-02 |
-| `nano-banana-pro-openrouter` | 83 | CONDITIONAL | Credential access detected | ASST-05 |
+| `nano-banana-pro-openrouter` | 84 | CONDITIONAL | Credential access detected | ASST-05 |
 | `openclaw-security-hardening` | 84 | CONDITIONAL | Concealment directive detected | ASST-01 |
 | `clawdbot-security-suite` | 84 | REJECTED | Download-and-execute pattern detected | ASST-04 |
 | `clankdin` | 84 | CONDITIONAL | Hidden instructions in HTML comment | ASST-01 |
 | `glitchward-shield` | 85 | CONDITIONAL | Direct instruction override detected (inside threat-listing context) | ASST-01 |
 | `canary` | 85 | CONDITIONAL | Credential access detected | ASST-05 |
-| `xapi-labs` | 85 | CONDITIONAL | Credential access detected | ASST-05 |
 | `xapi123123` | 85 | CONDITIONAL | Credential access detected | ASST-05 |
+| `xapi-labs` | 85 | CONDITIONAL | Credential access detected | ASST-05 |
 | `moltthreats` | 85 | CONDITIONAL | Credential access detected | ASST-05 |
 | `skill-audit` | 85 | REJECTED | Download-and-execute pattern detected | ASST-04 |
 | `nest-devices` | 86 | CONDITIONAL | Credential access detected | ASST-05 |
@@ -85,58 +85,58 @@ AgentVerus found **100 skills** with critical or high-severity text-based threat
 | `prose` | 86 | CONDITIONAL | Credential access detected | ASST-05 |
 | `circle-wallet` | 87 | CONDITIONAL | Credential access detected | ASST-05 |
 | `daily-dev` | 87 | CONDITIONAL | Credential access detected | ASST-05 |
-| `voidborne-advance` | 87 | REJECTED | Download-and-execute pattern detected | ASST-04 |
 | `monzo` | 87 | CONDITIONAL | Credential access detected | ASST-05 |
 | `add-analytics` | 88 | CONDITIONAL | Unrestricted mode activation detected | ASST-01 |
-| `browser-use` | 88 | CONDITIONAL | Credential access detected | ASST-05 |
-| `moltbook-daily-digest` | 88 | CONDITIONAL | Credential access detected | ASST-05 |
-| `clawnews` | 88 | CONDITIONAL | Credential access detected | ASST-05 |
-| `clawingtrap` | 88 | CONDITIONAL | Credential access detected | ASST-05 |
-| `moltysmind` | 88 | CONDITIONAL | Credential access detected | ASST-05 |
 | `tado` | 88 | CONDITIONAL | Credential access detected | ASST-05 |
-| `moltr` | 88 | CONDITIONAL | Credential access detected | ASST-05 |
 | `webchat-audio-notifications` | 88 | CONDITIONAL | Unrestricted mode activation detected | ASST-01 |
-| `zyla-api-hub-skill` | 88 | CONDITIONAL | Hidden instructions in HTML comment | ASST-01 |
 | `veeam-mcp` | 88 | CONDITIONAL | Credential access detected | ASST-05 |
-| `flock-in-v1` | 88 | CONDITIONAL | Credential access detected | ASST-05 |
 | `blankspace-registration` | 88 | CONDITIONAL | Credential access detected | ASST-05 |
+| `browser-use` | 89 | CONDITIONAL | Credential access detected | ASST-05 |
 | `credential-manager` | 89 | CONDITIONAL | Credential access detected | ASST-05 |
-| `agentgram` | 89 | CONDITIONAL | Credential access detected | ASST-05 |
-| `gotify` | 89 | CONDITIONAL | Credential access detected | ASST-05 |
 | `moltbook-firewall` | 89 | CONDITIONAL | Direct instruction override detected (inside code block) | ASST-01 |
-| `kindroid-interact` | 89 | CONDITIONAL | Credential access detected | ASST-05 |
 | `mailmolt` | 89 | CONDITIONAL | Credential access detected | ASST-05 |
 | `agent-council` | 89 | CONDITIONAL | Unrestricted mode activation detected | ASST-01 |
 | `privy` | 89 | CONDITIONAL | Direct instruction override detected (inside code block) | ASST-01 |
 | `claw-credit` | 89 | CONDITIONAL | Credential access detected | ASST-05 |
-| `agent-social` | 89 | CONDITIONAL | Credential access detected | ASST-05 |
+| `flock-in-v1` | 89 | CONDITIONAL | Credential access detected | ASST-05 |
 | `moltbook-cli` | 90 | CONDITIONAL | Credential access detected | ASST-05 |
+| `clawdbot-security-check` | 90 | CONDITIONAL | Credential access detected | ASST-05 |
+| `agentgram` | 90 | CONDITIONAL | Credential access detected | ASST-05 |
+| `clawingtrap` | 90 | CONDITIONAL | Credential access detected | ASST-05 |
+| `lieutenant` | 90 | CONDITIONAL | Direct instruction override detected (inside code block) | ASST-01 |
+| `moltpho` | 90 | CONDITIONAL | Credential access detected | ASST-05 |
+| `moltbook-ay` | 90 | CONDITIONAL | Credential access detected | ASST-05 |
+| `kindroid-interact` | 90 | CONDITIONAL | Credential access detected | ASST-05 |
+| `moltr` | 90 | CONDITIONAL | Credential access detected | ASST-05 |
+| `agentguard` | 90 | CONDITIONAL | Credential access detected | ASST-05 |
+| `zyla-api-hub-skill` | 90 | CONDITIONAL | Hidden instructions in HTML comment | ASST-01 |
+| `algorithmic-art` | 90 | CONDITIONAL | Hidden instructions in HTML comment | ASST-01 |
 | ... | | | *50 more* | |
 
 ## Most Common Findings
 
 | # | Finding | Occurrences | % of Skills |
 |---|---------|-------------|-------------|
-| 1 | No explicit safety boundaries | 4026 | 81.8% |
-| 2 | Unknown external reference | 2855 | 58.0% |
-| 3 | Unknown external reference | 1921 | 39.0% |
-| 4 | Direct IP address reference | 1315 | 26.7% |
-| 5 | Unknown external reference | 1038 | 21.1% |
-| 6 | Unknown external reference | 847 | 17.2% |
-| 7 | Direct IP address reference | 719 | 14.6% |
-| 8 | Direct IP address reference | 621 | 12.6% |
-| 9 | Output constraints defined | 535 | 10.9% |
-| 10 | Direct IP address reference | 523 | 10.6% |
-| 11 | Missing or insufficient description | 518 | 10.5% |
-| 12 | Direct IP address reference | 445 | 9.0% |
-| 13 | Safety boundaries defined | 407 | 8.3% |
-| 14 | Error handling instructions present | 406 | 8.2% |
-| 15 | Many external URLs referenced (10) | 396 | 8.0% |
-| 16 | Financial/payment actions detected | 366 | 7.4% |
-| 17 | Direct IP address reference | 284 | 5.8% |
-| 18 | System modification detected | 241 | 4.9% |
+| 1 | No explicit safety boundaries | 4160 | 84.5% |
+| 2 | Unknown external reference | 2396 | 48.7% |
+| 3 | Unknown external reference | 1409 | 28.6% |
+| 4 | Direct IP address reference | 867 | 17.6% |
+| 5 | Many external URLs referenced (10) | 665 | 13.5% |
+| 6 | Unknown external reference | 626 | 12.7% |
+| 7 | Output constraints defined | 594 | 12.1% |
+| 8 | Missing or insufficient description | 532 | 10.8% |
+| 9 | Safety boundaries defined | 524 | 10.6% |
+| 10 | Unknown external reference | 492 | 10.0% |
+| 11 | Error handling instructions present | 452 | 9.2% |
+| 12 | Direct IP address reference | 389 | 7.9% |
+| 13 | Financial/payment actions detected | 372 | 7.6% |
+| 14 | Direct IP address reference | 314 | 6.4% |
+| 15 | Direct IP address reference | 263 | 5.3% |
+| 16 | System modification detected | 241 | 4.9% |
+| 17 | Direct IP address reference | 215 | 4.4% |
+| 18 | Direct IP address reference | 150 | 3.0% |
 | 19 | Credential access detected | 130 | 2.6% |
-| 20 | State persistence detected | 100 | 2.0% |
+| 20 | State persistence detected | 105 | 2.1% |
 
 ## Lowest-Scoring Skills
 
@@ -146,11 +146,11 @@ AgentVerus found **100 skills** with critical or high-severity text-based threat
 | `amped-defi` | 80 | 10 | Critical-risk permission: amped_swap_execute |
 | `clawdbot-security-suite` | 84 | 6 | Download-and-execute pattern detected |
 | `skill-audit` | 85 | 4 | Download-and-execute pattern detected |
-| `voidborne-advance` | 87 | 10 | Download-and-execute pattern detected |
-| `ore-miner` | 88 | 7 | Download-and-execute pattern detected |
-| `bottube` | 89 | 10 | Download-and-execute pattern detected |
+| `bottube` | 89 | 9 | Download-and-execute pattern detected |
 | `moltarena` | 90 | 6 | Download-and-execute pattern detected |
 | `chromadb-memory` | 90 | 8 | Download-and-execute pattern detected |
+| `ore-miner` | 90 | 5 | Download-and-execute pattern detected |
+| `voidborne-advance` | 90 | 4 | Download-and-execute pattern detected |
 | `claw-permission-firewall` | 91 | 4 | Download-and-execute pattern detected |
 | `canvas-lms` | 92 | 3 | Download-and-execute pattern detected |
 | `deep-research-pro` | 93 | 2 | Download-and-execute pattern detected |
@@ -159,16 +159,16 @@ AgentVerus found **100 skills** with critical or high-severity text-based threat
 
 | Slug | Score | Badge | Format |
 |------|-------|-------|--------|
+| `clawdaddy` | 100 | CERTIFIED | openclaw |
+| `molters-confessions` | 100 | CERTIFIED | openclaw |
 | `shadcn-ui` | 100 | CERTIFIED | openclaw |
 | `excel-weekly-dashboard` | 100 | CERTIFIED | openclaw |
-| `securityreview` | 100 | CERTIFIED | generic |
 | `ttrpg-gm` | 100 | CERTIFIED | openclaw |
+| `securityreview` | 100 | CERTIFIED | generic |
+| `tldw` | 100 | CERTIFIED | generic |
+| `clawxiv-api` | 100 | CERTIFIED | openclaw |
 | `pdd` | 100 | CERTIFIED | openclaw |
 | `claudia-agent-rms` | 100 | CERTIFIED | openclaw |
-| `angular-architect` | 100 | CERTIFIED | openclaw |
-| `swiggy` | 100 | CERTIFIED | openclaw |
-| `context-engineering` | 100 | CERTIFIED | openclaw |
-| `cli-developer` | 100 | CERTIFIED | openclaw |
 
 ## Methodology
 
