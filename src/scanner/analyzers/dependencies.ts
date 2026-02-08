@@ -300,6 +300,25 @@ export async function analyzeDependencies(skill: ParsedSkill): Promise<CategoryS
 						"Consider documenting the exact version or hash of the installer for supply chain verification.",
 					owaspCategory: "ASST-04",
 				});
+			} else if (inCodeBlock && /https:\/\//.test(match[0]) && !/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/.test(match[0])) {
+				// In a code block with HTTPS URL (no raw IP) — likely a setup example
+				// Downgrade severity but still flag
+				const deduction = 8;
+				score = Math.max(0, score - deduction);
+				findings.push({
+					id: `DEP-DL-EXEC-${findings.length + 1}`,
+					category: "dependencies",
+					severity: "medium",
+					title: "Download-and-execute pattern detected (inside code block)",
+					description:
+						"The skill contains a download-and-execute pattern inside a code block. Verify the URL is trustworthy.",
+					evidence: match[0].slice(0, 200),
+					lineNumber,
+					deduction,
+					recommendation:
+						"Pin the installer to a specific version or hash. Consider bundling dependencies instead.",
+					owaspCategory: "ASST-04",
+				});
 			} else {
 				const deduction = 25;
 				score = Math.max(0, score - deduction);
