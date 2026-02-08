@@ -6,6 +6,7 @@ import {
 	handleRegistryReport,
 	handleRegistryScan,
 	handleRegistrySite,
+	handleSkillsShScan,
 	printRegistryUsage,
 } from "../registry/cli.js";
 import { scanTargetsBatch } from "./runner.js";
@@ -323,6 +324,10 @@ async function main(): Promise<void> {
 		}
 		if (subcommand === "site") {
 			const code = await handleRegistrySite(args.slice(2));
+			process.exit(code);
+		}
+		if (subcommand === "skillssh") {
+			const code = await handleSkillsShScan(args.slice(2));
 			process.exit(code);
 		}
 		console.error(`Unknown registry subcommand: ${subcommand}`);

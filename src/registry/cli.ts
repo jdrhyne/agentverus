@@ -9,6 +9,11 @@ import type { TrustReport } from "../scanner/types.js";
 import { batchScanRegistry } from "./batch-scanner.js";
 import { generateAnalysisReport } from "./report-generator.js";
 import { generateSite } from "./site-generator.js";
+import {
+	fetchSkillsShSitemap,
+	resolveSkillsShUrls,
+	writeResolvedUrls,
+} from "./skillssh-resolver.js";
 
 const C = {
 	reset: "\x1b[0m",
@@ -314,6 +319,117 @@ export async function handleRegistrySite(args: string[]): Promise<number> {
 }
 
 /**
+ * Handle `agentverus registry skillssh` command.
+ * Fetches the skills.sh sitemap, resolves GitHub URLs, and batch scans.
+ */
+export async function handleSkillsShScan(args: string[]): Promise<number> {
+	let outDir = "data/skillssh-results";
+	let concurrency = 25;
+	let limit: number | undefined;
+	let timeout = 30_000;
+	let resolveOnly = false;
+
+	for (let i = 0; i < args.length; i++) {
+		const arg = args[i] as string;
+		const next = args[i + 1];
+		if (arg === "--out" && next) { outDir = next; i++; continue; }
+		if (arg === "--concurrency" && next) { concurrency = Number.parseInt(next, 10); i++; continue; }
+		if (arg === "--limit" && next) { limit = Number.parseInt(next, 10); i++; continue; }
+		if (arg === "--timeout" && next) { timeout = Number.parseInt(next, 10); i++; continue; }
+		if (arg === "--resolve-only") { resolveOnly = true; continue; }
+		if (arg.startsWith("-")) { console.error(`Unknown option: ${arg}`); return 1; }
+	}
+
+	console.log(`${C.bold}AgentVerus skills.sh Scanner${C.reset}`);
+	console.log("─".repeat(60));
+
+	// Step 1: Fetch sitemap
+	console.log(`\n  ${C.cyan}Fetching skills.sh sitemap...${C.reset}`);
+	const entries = await fetchSkillsShSitemap();
+	console.log(`  Found ${entries.length} skills in ${new Set(entries.map(e => `${e.owner}/${e.repo}`)).size} repos`);
+
+	// Step 2: Resolve GitHub raw URLs
+	console.log(`\n  ${C.cyan}Resolving GitHub URLs (probing repos)...${C.reset}`);
+	const startResolve = Date.now();
+	const resolveResult = await resolveSkillsShUrls(entries, {
+		timeout: 10_000,
+		concurrency: 30,
+		onProgress: (done, total, repo) => {
+			const pct = ((done / total) * 100).toFixed(1);
+			process.stdout.write(`\r  [${pct.padStart(5)}%] ${done}/${total} repos  ${repo.padEnd(50)}`);
+		},
+	});
+	process.stdout.write(`\r${" ".repeat(100)}\r`);
+
+	const resolveTime = Date.now() - startResolve;
+	console.log(`  Resolved: ${resolveResult.resolved.length} skills in ${resolveResult.resolvedRepoCount}/${resolveResult.repoCount} repos (${(resolveTime / 1000).toFixed(1)}s)`);
+	console.log(`  Unresolved: ${resolveResult.unresolved.length} skills`);
+
+	// Write resolved URLs
+	const { mkdir } = await import("node:fs/promises");
+	await mkdir(outDir, { recursive: true });
+	const urlFile = `${outDir}/resolved-urls.txt`;
+	await writeResolvedUrls(resolveResult.resolved, urlFile);
+	console.log(`  URL list: ${urlFile}`);
+
+	if (resolveOnly) {
+		console.log(`\n  ${C.green}✓ Resolve complete. Run 'agentverus registry scan --urls ${urlFile}' to scan.${C.reset}`);
+		return 0;
+	}
+
+	// Step 3: Scan
+	let skillsToScan = resolveResult.resolved;
+	if (limit && limit > 0) {
+		skillsToScan = skillsToScan.slice(0, limit);
+	}
+
+	console.log(`\n  ${C.cyan}Scanning ${skillsToScan.length} skills...${C.reset}`);
+	const startScan = Date.now();
+
+	const summary = await batchScanRegistry({
+		urlFile,
+		outDir,
+		concurrency,
+		timeout,
+		retries: 1,
+		retryDelayMs: 500,
+		limit,
+		onProgress: (done, total, slug, badge) => {
+			const pct = ((done / total) * 100).toFixed(1);
+			const elapsed = ((Date.now() - startScan) / 1000).toFixed(0);
+			const rate = done > 0 ? (done / ((Date.now() - startScan) / 1000)).toFixed(1) : "0";
+
+			const badgeStr = badge
+				? `${badgeEmoji(badge)} ${badge.toUpperCase().padEnd(11)}`
+				: `${C.red}✖ ERROR${C.reset}     `;
+
+			process.stdout.write(`\r  [${pct.padStart(5)}%] ${done}/${total}  ${elapsed}s  ${rate}/s  ${badgeStr} ${slug.slice(0, 40)}`);
+		},
+	});
+
+	process.stdout.write(`\r${" ".repeat(120)}\r`);
+
+	console.log(`\n${C.bold}Scan Complete${C.reset}`);
+	console.log("─".repeat(60));
+	console.log(`  Scanned:     ${summary.scanned} / ${summary.totalSkills}`);
+	console.log(`  Failed:      ${summary.failed}`);
+	console.log(`  Duration:    ${(summary.totalDurationMs / 1000).toFixed(1)}s`);
+	console.log(`  Avg Score:   ${summary.averageScore}`);
+	console.log(`  Median:      ${summary.medianScore}`);
+	console.log();
+	console.log(`  ${C.green}🟢 Certified:   ${summary.badges["certified"] ?? 0}${C.reset}`);
+	console.log(`  ${C.yellow}🟡 Conditional: ${summary.badges["conditional"] ?? 0}${C.reset}`);
+	console.log(`  🟠 Suspicious: ${summary.badges["suspicious"] ?? 0}`);
+	console.log(`  ${C.red}🔴 Rejected:    ${summary.badges["rejected"] ?? 0}${C.reset}`);
+	console.log();
+	console.log(`  VT-blind threats: ${summary.vtGapSkills.length} skills`);
+	console.log();
+	console.log(`  Output: ${outDir}/`);
+
+	return 0;
+}
+
+/**
  * Print registry-specific usage.
  */
 export function printRegistryUsage(): void {
@@ -322,7 +438,8 @@ ${C.bold}AgentVerus Registry Commands${C.reset}
 
 ${C.bold}COMMANDS${C.reset}
   check <slug...>       Check a ClawHub skill by slug (downloads and scans)
-  registry scan          Batch scan all skills from the registry
+  registry scan          Batch scan all skills from a URL list
+  registry skillssh      Fetch, resolve, and scan all skills from skills.sh
   registry report        Generate markdown analysis report from scan results
   registry site          Generate static HTML dashboard from scan results
 
@@ -340,6 +457,13 @@ ${C.bold}REGISTRY REPORT OPTIONS${C.reset}
   --data <dir>           Scan results directory (default: data/scan-results)
   --out <dir>            Report output directory (default: data/report)
 
+${C.bold}REGISTRY SKILLSSH OPTIONS${C.reset}
+  --out <dir>            Output directory (default: data/skillssh-results)
+  --concurrency <n>      Max parallel scans (default: 25)
+  --limit <n>            Only scan first N resolved skills
+  --timeout <ms>         Fetch timeout (default: 30000)
+  --resolve-only         Only resolve URLs, don't scan
+
 ${C.bold}REGISTRY SITE OPTIONS${C.reset}
   --data <dir>           Scan results directory (default: data/scan-results)
   --out <dir>            Site output directory (default: data/site)
@@ -349,6 +473,8 @@ ${C.bold}EXAMPLES${C.reset}
   agentverus check web-search
   agentverus check git-commit docker-build --json
   agentverus registry scan --concurrency 50 --limit 100
+  agentverus registry skillssh --concurrency 50
+  agentverus registry skillssh --resolve-only
   agentverus registry report
   agentverus registry site --title "ClawHub Security Audit"
 `);

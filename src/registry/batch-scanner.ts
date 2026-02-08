@@ -57,11 +57,33 @@ function parseSkillUrls(content: string): ParsedUrl[] {
 
 		try {
 			const url = new URL(trimmed);
-			const slug = url.searchParams.get("slug") ?? "";
-			const version = url.searchParams.get("version") ?? "";
+
+			// ClawHub format: ?slug=xxx&version=yyy
+			const slug = url.searchParams.get("slug");
 			if (slug) {
+				const version = url.searchParams.get("version") ?? "";
 				results.push({ slug, version, url: trimmed });
+				continue;
 			}
+
+			// Raw GitHub URL: extract slug from path
+			// e.g. raw.githubusercontent.com/owner/repo/branch/skills/my-skill/SKILL.md
+			const pathParts = url.pathname.split("/").filter(Boolean);
+			if (url.hostname === "raw.githubusercontent.com" && pathParts.length >= 3) {
+				// Derive slug from the path: use the folder containing SKILL.md, or the repo name
+				const skillMdIndex = pathParts.findIndex(
+					(p) => p.toLowerCase() === "skill.md" || p.toLowerCase() === "skills.md",
+				);
+				const folder =
+					skillMdIndex > 0 ? pathParts[skillMdIndex - 1] : pathParts[pathParts.length - 1];
+				const derivedSlug = folder ?? pathParts.slice(0, 2).join("-");
+				results.push({ slug: derivedSlug, version: "", url: trimmed });
+				continue;
+			}
+
+			// Generic URL: derive slug from last path segment or hostname
+			const lastSegment = pathParts[pathParts.length - 1]?.replace(/\.md$/i, "");
+			results.push({ slug: lastSegment ?? url.hostname, version: "", url: trimmed });
 		} catch {
 			// Skip malformed lines
 		}

@@ -1,6 +1,12 @@
 export { batchScanRegistry } from "./batch-scanner.js";
 export { generateAnalysisReport } from "./report-generator.js";
 export { generateSite } from "./site-generator.js";
+export {
+	fetchSkillsShSitemap,
+	parseSitemap,
+	resolveSkillsShUrls,
+	writeResolvedUrls,
+} from "./skillssh-resolver.js";
 export type {
 	RegistryFinding,
 	RegistryScanError,
