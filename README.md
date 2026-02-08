@@ -124,7 +124,7 @@ Badge meanings:
 
 - `repo-certified.json` — **CERTIFIED** only if *every* skill in the repo is `CERTIFIED` (and there are no scan failures). Otherwise **NOT CERTIFIED**.
 - `repo-certified-pct.json` — percent of skills that are `CERTIFIED` (e.g. `Certified 83%`).
-- `skills/<slug>.json` — per-skill badge (canonical). `slug` is derived from the scanned file path (e.g. `skills/web-search/SKILL.md` → `skills__web-search__SKILL.md.json`).
+- `skills/<slug>.json` — per-skill badge (canonical). `slug` is derived from the scanned file path (e.g. `skills/web-search/SKILL.md` → `skills--web-search--SKILL.md.json`).
 
 Embed in your README (example URLs assume you deploy the `badges/` directory as the **GitHub Pages site root**):
 

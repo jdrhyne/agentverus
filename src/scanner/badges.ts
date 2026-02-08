@@ -35,7 +35,17 @@ export interface WriteBadgesOptions {
 	readonly cacheSeconds?: number;
 }
 
-function endpoint(label: string, message: string, color: string, cacheSeconds?: number): ShieldsEndpoint {
+/** Default cacheSeconds for Shields endpoint JSON. */
+const DEFAULT_CACHE_SECONDS = 3600;
+
+function resolveOptions(options?: WriteBadgesOptions): { label: string; cacheSeconds: number } {
+	return {
+		label: options?.label ?? "AgentVerus",
+		cacheSeconds: options?.cacheSeconds ?? DEFAULT_CACHE_SECONDS,
+	};
+}
+
+function endpoint(label: string, message: string, color: string, cacheSeconds: number): ShieldsEndpoint {
 	return {
 		schemaVersion: 1,
 		label,
@@ -47,10 +57,12 @@ function endpoint(label: string, message: string, color: string, cacheSeconds?: 
 
 export function slugForTarget(target: string): string {
 	// Stable across platforms and safe for GitHub Pages paths.
+	// Path separators become "--", other non-safe characters become "_".
+	// This avoids collisions between e.g. "skills/my skill/SKILL.md" and "skills/my/skill/SKILL.md".
 	return target
 		.replace(/\\/g, "/")
-		.replace(/[^a-zA-Z0-9._/-]/g, "__")
-		.replace(/\//g, "__");
+		.replace(/\/+/g, "--")
+		.replace(/[^a-zA-Z0-9._-]/g, "_");
 }
 
 export function colorForTier(tier: BadgeTier): string {
@@ -80,8 +92,7 @@ export function buildSkillBadgeEndpoint(
 	item: ScanTargetReport,
 	options?: WriteBadgesOptions,
 ): ShieldsEndpoint {
-	const label = options?.label ?? "AgentVerus";
-	const cacheSeconds = options?.cacheSeconds ?? 3600;
+	const { label, cacheSeconds } = resolveOptions(options);
 	const tier = item.report.badge;
 	const msg = `${tier.toUpperCase()} (${item.report.overall}/100)`;
 	return endpoint(label, msg, colorForTier(tier), cacheSeconds);
@@ -92,10 +103,13 @@ export function buildRepoCertifiedEndpoint(
 	failures: readonly ScanFailure[],
 	options?: WriteBadgesOptions,
 ): ShieldsEndpoint {
-	const label = options?.label ?? "AgentVerus";
-	const cacheSeconds = options?.cacheSeconds ?? 3600;
+	const { label, cacheSeconds } = resolveOptions(options);
 
 	const total = reports.length;
+	if (total === 0 && failures.length === 0) {
+		return endpoint(label, "No skills found", "lightgrey", cacheSeconds);
+	}
+
 	const allCertified = total > 0 && failures.length === 0 && reports.every((r) => r.report.badge === "certified");
 	return allCertified
 		? endpoint(label, "CERTIFIED", "brightgreen", cacheSeconds)
@@ -107,8 +121,7 @@ export function buildRepoCertifiedPercentEndpoint(
 	failures: readonly ScanFailure[],
 	options?: WriteBadgesOptions,
 ): ShieldsEndpoint {
-	const label = options?.label ?? "AgentVerus";
-	const cacheSeconds = options?.cacheSeconds ?? 3600;
+	const { label, cacheSeconds } = resolveOptions(options);
 
 	if (failures.length > 0) return endpoint(label, "Scan failed", "red", cacheSeconds);
 
@@ -128,18 +141,29 @@ export async function writeBadgeBundle(
 	options?: WriteBadgesOptions,
 ): Promise<BadgeIndex> {
 	const skillsDir = join(outDir, "skills");
-	await mkdir(skillsDir, { recursive: true });
+
+	try {
+		await mkdir(skillsDir, { recursive: true });
+	} catch (err) {
+		const message = err instanceof Error ? err.message : String(err);
+		throw new Error(`Failed to create badge output directory "${skillsDir}": ${message}`);
+	}
 
 	// Repo badges
 	const repoCertified = buildRepoCertifiedEndpoint(reports, failures, options);
 	const repoPct = buildRepoCertifiedPercentEndpoint(reports, failures, options);
 
-	await writeFile(join(outDir, "repo-certified.json"), `${JSON.stringify(repoCertified, null, 2)}\n`, "utf-8");
-	await writeFile(
-		join(outDir, "repo-certified-pct.json"),
-		`${JSON.stringify(repoPct, null, 2)}\n`,
-		"utf-8",
-	);
+	try {
+		await writeFile(join(outDir, "repo-certified.json"), `${JSON.stringify(repoCertified, null, 2)}\n`, "utf-8");
+		await writeFile(
+			join(outDir, "repo-certified-pct.json"),
+			`${JSON.stringify(repoPct, null, 2)}\n`,
+			"utf-8",
+		);
+	} catch (err) {
+		const message = err instanceof Error ? err.message : String(err);
+		throw new Error(`Failed to write repo badge files to "${outDir}": ${message}`);
+	}
 
 	// Per-skill badges + index
 	const skills: BadgeIndexSkill[] = [];
@@ -148,11 +172,16 @@ export async function writeBadgeBundle(
 		skills.push({ target: item.target, slug, overall: item.report.overall, badge: item.report.badge });
 
 		const skillEndpoint = buildSkillBadgeEndpoint(item, options);
-		await writeFile(
-			join(skillsDir, `${slug}.json`),
-			`${JSON.stringify(skillEndpoint, null, 2)}\n`,
-			"utf-8",
-		);
+		try {
+			await writeFile(
+				join(skillsDir, `${slug}.json`),
+				`${JSON.stringify(skillEndpoint, null, 2)}\n`,
+				"utf-8",
+			);
+		} catch (err) {
+			const message = err instanceof Error ? err.message : String(err);
+			throw new Error(`Failed to write skill badge for "${item.target}" (slug: ${slug}): ${message}`);
+		}
 	}
 
 	const certifiedSkills = reports.filter((r) => r.report.badge === "certified").length;
@@ -167,6 +196,12 @@ export async function writeBadgeBundle(
 		skills,
 	};
 
-	await writeFile(join(outDir, "skills", "index.json"), `${JSON.stringify(index, null, 2)}\n`, "utf-8");
+	try {
+		await writeFile(join(outDir, "skills", "index.json"), `${JSON.stringify(index, null, 2)}\n`, "utf-8");
+	} catch (err) {
+		const message = err instanceof Error ? err.message : String(err);
+		throw new Error(`Failed to write badge index to "${skillsDir}/index.json": ${message}`);
+	}
+
 	return index;
 }

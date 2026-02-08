@@ -223,6 +223,7 @@ ${COLORS.bold}SCAN OPTIONS${COLORS.reset}
   --report [path]  Generate markdown report (default: <name>-trust-report.md)
   --sarif [path]   Write SARIF 2.1.0 output (default: agentverus-scanner.sarif)
   --badges [dir]  Write Shields.io endpoint badge JSON for repo + each skill (default: badges)
+  --badge-cache-seconds <n>  Shields.io cacheSeconds value for badge JSON (default: 3600)
   --semantic        Enable LLM-assisted semantic analysis (requires AGENTVERUS_LLM_API_KEY)
   --fail-on-severity <level>  Fail if findings at/above level exist (critical|high|medium|low|info|none)
   --timeout <ms>    URL fetch timeout in ms (default varies by source; set <=0 to disable)
@@ -299,8 +300,9 @@ function parseOptionalInt(value: string | undefined, flag: string): number | und
 }
 
 async function main(): Promise<void> {
-	// Some runners (e.g. pnpm + tsx) may inject a standalone "--" before the real args.
-	const args = process.argv.slice(2).filter((a) => a !== "--");
+	// Some runners (e.g. pnpm + tsx) may inject a leading "--" before the real args.
+	const raw = process.argv.slice(2);
+	const args = raw[0] === "--" ? raw.slice(1) : raw;
 
 	if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
 		printUsage();
@@ -367,6 +369,7 @@ async function main(): Promise<void> {
 	let sarifPath: string | undefined;
 	let badgesFlag = false;
 	let badgesDir: string | undefined;
+	let badgeCacheSeconds: number | undefined;
 	let failOnSeverity: FailOnSeverity | undefined;
 	let semanticFlag = false;
 	let timeout: number | undefined;
@@ -411,6 +414,14 @@ async function main(): Promise<void> {
 				badgesDir = next;
 				i += 1;
 			}
+			continue;
+		}
+
+		if (arg === "--badge-cache-seconds") {
+			const next = scanArgs[i + 1];
+			if (!next || next.startsWith("-")) throw new Error("Missing value for --badge-cache-seconds");
+			badgeCacheSeconds = parseOptionalInt(next, "--badge-cache-seconds");
+			i += 1;
 			continue;
 		}
 
@@ -542,7 +553,7 @@ async function main(): Promise<void> {
 
 	if (badgesFlag) {
 		const outDir = (badgesDir ?? "badges").trim() || "badges";
-		const index = await writeBadgeBundle(scanned, failures, outDir, { label: "AgentVerus", cacheSeconds: 3600 });
+		const index = await writeBadgeBundle(scanned, failures, outDir, { label: "AgentVerus", cacheSeconds: badgeCacheSeconds ?? 3600 });
 		if (!jsonFlag) {
 			console.log(`\n${COLORS.green}Badges written to: ${outDir}${COLORS.reset}`);
 			console.log(`${COLORS.gray}- Skills: ${index.totalSkills}, Certified: ${index.percentCertified}%${COLORS.reset}`);

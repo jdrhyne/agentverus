@@ -16,6 +16,7 @@
 		"./types": "./dist/scanner/types.js",
 		"./parser": "./dist/scanner/parser.js",
 		"./source": "./dist/scanner/source.js",
+		"./badges": "./dist/scanner/badges.js",
 		"./registry": "./dist/registry/index.js"
 	},
 	"main": "./dist/scanner/index.js",
