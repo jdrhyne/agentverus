@@ -66,27 +66,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Genuine prose-level attacks (should still be caught despite context awareness).
   - Indirect exfiltration via URL parameter encoding.
   - Rephrased jailbreak attempts.
+- **Evasion context tests** (`test/scanner/evasion-context.test.ts`): 6 tests verifying the scanner resists context-based bypass attempts:
+  - Fake security skill with real exfiltration (self-labels as "Security Guard").
+  - `curl | bash` to unknown/raw-IP domains in setup sections (not downgraded).
+  - Real injection hidden around a fake threat table.
+  - Real attacks after a legitimate safety section heading.
+  - Legitimate security skill (should be certified).
+  - Legitimate `curl | bash` to known installer (should be certified).
 - **Context utility tests** (`test/scanner/context.test.ts`): 12 unit tests for code block, safety section, and negation detection.
 - **Semantic analyzer tests** (`test/scanner/semantic.test.ts`): 3 tests covering graceful degradation when no API key is configured.
-- **5 new adversarial test fixtures**: `evasion-context-safe.md`, `evasion-negation-safe.md`, `evasion-hidden-in-codeblock.md`, `evasion-indirect-exfiltration.md`, `evasion-rephrased-jailbreak.md`.
+- **11 new test fixtures**: `evasion-context-safe.md`, `evasion-negation-safe.md`, `evasion-hidden-in-codeblock.md`, `evasion-indirect-exfiltration.md`, `evasion-rephrased-jailbreak.md`, `evasion-fake-security-skill.md`, `evasion-curl-setup-section.md`, `evasion-threat-table-injection.md`, `evasion-negation-disguise.md`, `legit-curl-install.md`, `legit-security-skill.md`.
+- **Self-domain trust**: The dependencies analyzer now auto-detects "self domains" from the skill name. If the skill is `nutrient-openclaw` and references `nutrient.io`, those URLs are recognized as self-referencing and trusted — no more noise findings for skills linking to their own product.
+- **API/docs path trust**: HTTPS URLs with paths starting `/api`, `/docs`, `/reference`, `/sdk`, `/guide`, `/getting-started`, `/quickstart` are trusted regardless of domain — these are product documentation, not suspicious endpoints.
 
 ### Fixed
 
 - **Injection analyzer**: Removed bare `.env` / `.ssh` / `.credentials` / `.secrets` substring match from the data exfiltration pattern — was producing critical findings on skills that merely reference `.env.example` or document environment variable setup.
 - **Injection analyzer**: Tightened credential access patterns to require an action verb (`read`, `cat`, `dump`, `steal`, etc.) before sensitive paths. Bare mentions of `API_KEY`, `SECRET_KEY`, `PASSWORD`, etc. in setup documentation no longer trigger high-severity findings.
 - **Injection analyzer**: Narrowed data exfiltration regex to require a directive form ("send/post X to URL") rather than matching HTTP method keywords near any URL, which was flagging API authentication code examples.
+- **Injection analyzer**: Security defense skills (by name/description/content) get suppressed injection findings for educational threat listings in tables, bold labels, and list items.
+- **Injection analyzer**: `isInThreatListingContext` now recognizes "attack vector", "attack coverage", "injection type/category/pattern/vector", and "direct injection" in preceding text.
+- **Injection analyzer**: Suppressed matches (severity multiplier 0) now `continue` instead of `break`, so real injection patterns after a threat-listing row are still detected.
+- **Injection analyzer**: Fixed "you are now in unrestricted mode" regex to match with `in` prefix.
+- **Content analyzer**: Context-aware harmful pattern detection — `isHarmfulMatchNegated()` checks "do not use when", "attempts to", threat-listing, table, and allowlist contexts.
+- **Content analyzer**: Placeholder API key detection — `xxx`/`XXX`/repeated-char patterns and AWS `AKIA` + all-X variable portions are skipped.
 - **Dependencies analyzer**: Localhost and private IP addresses (`127.0.0.1`, `10.x`, `172.16–31.x`, `192.168.x`) are no longer flagged as suspicious external IPs.
 - **Dependencies analyzer**: Expanded the trusted domains list with ~40 additional well-known domains (Google, Microsoft, AWS, Supabase, Stripe, LinkedIn, npm registry, example.com, etc.).
+- **Dependencies analyzer**: Fixed `www.npmjs.com` and `www.pypi.org` not matching trusted domain patterns (missing `www.` prefix).
 - **Dependencies analyzer**: Capped cumulative deduction from unknown (non-dangerous) URLs at 15 points, preventing skills with extensive API endpoint documentation from being unfairly penalized.
 - **Dependencies analyzer**: Download-and-execute detection is now context-aware — patterns inside code blocks or safety sections are skipped.
+- **Dependencies analyzer**: `curl | bash` in setup sections only downgraded for HTTPS + known TLDs (com/org/io/dev/sh/rs/land/cloud/app/ai/so/net/co) — raw IPs and unknown TLDs still flagged as CRITICAL.
+- **Dependencies analyzer**: `curl | bash` in code blocks with HTTPS (no raw IP) gets MEDIUM severity instead of CRITICAL — still flagged but not an automatic rejection.
+- **Dependencies analyzer**: Table rows with threat/risk/severity keywords now trigger threat-description suppression for download-execute patterns.
+- **Dependencies analyzer**: Threat description check broadened to recognize "malware", "scan ... skill", "catch them", and other security-tool context.
+- **Dependencies analyzer**: Fixed `download and execute` regex to require literal `and` (was matching "Download RUN").
+- **Dependencies analyzer**: Known installer domains list (14 domains) for `curl | bash` downgrade — deno.land, bun.sh, tailscale.com, foundry.paradigm.xyz, etc.
 - **Behavioral analyzer**: `npm install` and `pip install` without `--global` / `-g` flags are no longer flagged as system modification. Only global installs and system package managers (`apt`, `yum`, `dnf`, `pacman`) are flagged.
 - **Behavioral analyzer**: Tightened the combined exfiltration flow heuristic to require active credential reading patterns **and** suspicious POST/exfiltration patterns. Previously, any skill mentioning an API key alongside any URL would trigger a high-severity finding.
-- **Behavioral analyzer**: Prerequisite trap detection (curl-pipe-to-shell) is now context-aware.
+- **Behavioral analyzer**: Prerequisite trap detection (curl-pipe-to-shell) is now context-aware. Same HTTPS + known TLD gate as dependencies analyzer.
+- **Context analyzer**: Safety section regex now requires `##`+ (not `#`) to avoid matching skill titles containing "do not".
+- **Context analyzer**: `isPrecededByNegation` expanded to detect descriptive subject+verb patterns ("agents forget everything" ≠ "forget everything").
 
 ### Changed
 
 - **Test fixtures**: Updated `suspicious-urls.md` to use public IP addresses instead of private IPs for the IP-flagging test.
 - **Test fixtures**: Updated `undeclared-permissions.md` to contain genuinely suspicious credential access patterns (e.g. `cat ~/.ssh/id_rsa`) rather than plain keyword mentions.
+- **Full registry re-scan**: Both ClawHub (4,923 skills) and skills.sh (2,123 skills) re-scanned with all fixes. Results: 6,734 certified, 283 conditional, 10 suspicious, 19 rejected. 162 VT-blind threats across 7,046 skills. All data artifacts (REPORT.md, dashboard, aggregate stats) regenerated.
 
 ## [0.1.0] - 2026-01-15
 
