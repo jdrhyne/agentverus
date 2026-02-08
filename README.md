@@ -4,6 +4,10 @@ Open-source security and behavioral trust scanner for AI agent skills (`SKILL.md
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE.md)
 
+<p align="center">
+  <img src="assets/social-preview.png" alt="AgentVerus Scanner — detecting hidden threats in AI agent skill files" width="800" />
+</p>
+
 ## What It Does
 
 Scans agent skill files and produces structured trust reports covering:
@@ -21,6 +25,10 @@ npm install --save-dev agentverus-scanner
 ```
 
 ## CLI Usage
+
+<p align="center">
+  <img src="assets/terminal-output.png" alt="AgentVerus Scanner CLI output" width="700" />
+</p>
 
 ```bash
 # Scan a local skill file
