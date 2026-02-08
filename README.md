@@ -147,6 +147,19 @@ pnpm lint
 pnpm build:actions
 ```
 
+## Contributing
+
+We welcome contributions! See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines on:
+
+- Reporting bugs and false positives
+- Adding or improving detection rules
+- Writing tests and fixtures
+- The pull request process
+
+## Changelog
+
+See [CHANGELOG.md](./CHANGELOG.md) for a full history of changes.
+
 ## License
 
 MIT — see [LICENSE.md](./LICENSE.md).
