@@ -5,9 +5,9 @@ import { applyDeclaredPermissions } from "./declared-match.js";
 /** Trusted domain patterns */
 const TRUSTED_DOMAINS = [
 	/^github\.com\/(?!.*\/raw\/)/,
-	/^npmjs\.com/,
+	/^(?:www\.)?npmjs\.com/,
 	/^registry\.npmjs\.org/,
-	/^pypi\.org/,
+	/^(?:www\.)?pypi\.org/,
 	/^docs\./,
 	/^developer\./,
 	/^api\.npmjs\.com/,
@@ -187,7 +187,39 @@ function classifyUrl(url: string): {
 		}
 	}
 
+	// URLs to docs/api subpaths of any HTTPS domain are likely product documentation
+	// e.g., https://www.nutrient.io/api/ or https://docs.someservice.com/
+	if (/^https:\/\//.test(url)) {
+		const pathPart = url.replace(/^https?:\/\/[^/]+/, "");
+		if (/^\/(api|docs|documentation|reference|guide|sdk|getting-started|quickstart)\b/i.test(pathPart)) {
+			return { risk: "trusted", deduction: 0 };
+		}
+	}
+
 	return { risk: "unknown", deduction: 5 };
+}
+
+/**
+ * Build a set of "self domains" from the skill's name and description.
+ * If the skill is "nutrient-openclaw" and mentions "Nutrient DWS API",
+ * then nutrient.io URLs are self-referencing and should be trusted.
+ */
+function extractSelfDomains(skill: ParsedSkill): Set<string> {
+	const selfDomains = new Set<string>();
+
+	// Extract domain-like tokens from the skill name (e.g., "nutrient" from "nutrient-openclaw")
+	const nameTokens = (skill.name ?? "").toLowerCase().split(/[-_\s]+/).filter(t => t.length >= 3);
+
+	// Find domains referenced in the URLs and check if they match name tokens
+	for (const url of skill.urls) {
+		const hostname = getHostname(url).toLowerCase().replace(/^www\./, "");
+		const domainBase = hostname.split(".")[0] ?? "";
+		if (domainBase && nameTokens.includes(domainBase)) {
+			selfDomains.add(hostname);
+		}
+	}
+
+	return selfDomains;
 }
 
 /** Analyze dependencies and external URLs */
@@ -196,11 +228,20 @@ export async function analyzeDependencies(skill: ParsedSkill): Promise<CategoryS
 	let score = 100;
 	const content = skill.rawContent;
 
+	// Build self-domain list — URLs to the skill's own product are trusted
+	const selfDomains = extractSelfDomains(skill);
+
 	// Classify each URL, cap cumulative deduction for low-risk unknowns
 	let unknownUrlDeductionTotal = 0;
 	const UNKNOWN_URL_DEDUCTION_CAP = 15; // max total points lost from unknown (non-dangerous) URLs
 
 	for (const url of skill.urls) {
+		// Check if URL is to the skill's own domain
+		const hostname = getHostname(url).toLowerCase().replace(/^www\./, "");
+		if (selfDomains.has(hostname)) {
+			continue; // Skip — self-referencing URL is trusted
+		}
+
 		const classification = classifyUrl(url);
 
 		if (classification.deduction > 0) {
