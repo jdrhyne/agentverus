@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-02-08
+
+### Added
+
+- **Universal pre-install gate** (`agentverus check`): Accept any skill source — not just ClawHub slugs. Supported formats:
+  - ClawHub slug: `agentverus check web-search` (backward compatible)
+  - GitHub shorthand: `agentverus check owner/repo`
+  - GitHub multi-skill: `agentverus check owner/repo/skill-name`
+  - GitHub URL: `agentverus check https://github.com/owner/repo`
+  - skills.sh URL: `agentverus check https://skills.sh/owner/repo/skill`
+  - Local file: `agentverus check ./SKILL.md`
+- **Multi-skill repo discovery**: For `owner/repo` inputs, auto-discovers all SKILL.md files via GitHub tree API. Tries `main` then `master` branch. Reports on each skill independently.
+- **`--install` flag**: Scan → verdict → confirmation prompt → `npx skills add <source>`. Security warning shown if scan doesn't pass.
+- **`--yes` flag**: Skip confirmation prompts for CI/non-interactive pipelines. TTY detection prevents accidental installs in scripts.
+- **`--help` flag**: Detailed usage text with examples for the check command.
+- **`resolveSkillsShUrl()`**: New exported function to resolve a single skills.sh URL to a raw GitHub SKILL.md URL (previously only batch resolution was supported).
+- **skills.sh scanner** (`agentverus registry skillssh`): Resolve and scan 2,300+ GitHub-hosted skills from the skills.sh sitemap. Generates the same JSON/CSV/report/site outputs as the ClawHub registry scanner.
+- **AGENTS.md**: Comprehensive guide for AI coding agents working on the codebase — covers architecture, ASST taxonomy, analyzer rules, scoring weights, CLI usage, GitHub Action, zero-dependency philosophy, and relationship to the web repo.
+
+### Fixed
+
+- **False positive reduction**: Self-referencing URLs (e.g., a skill's own GitHub repo URL) and API documentation URLs no longer trigger suspicious external URL findings.
+- **Deep context analysis**: Eliminated false positive rejections caused by over-aggressive pattern matching. Improved context-aware analysis for educational/security skills that discuss attack patterns in documentation.
+- **Adversarial evasion tests**: Added new tests covering over-correction bugs where legitimate security documentation was being penalized.
+
+### Changed
+
+- **Check command signature**: `agentverus check <slug...>` → `agentverus check <source...>`. Old slug-only usage still works — fully backward compatible.
+- **JSON output**: Single-source, single-result checks preserve the flat report shape. Multi-source or multi-result checks use `{ results: [...], failures: [...] }`.
+- **CLI help text**: Updated usage, command descriptions, and examples to reflect universal check capabilities.
+- **Re-scanned registries**: Both ClawHub and skills.sh registries re-scanned with fixed scanner, all artifacts regenerated.
+
+## [0.1.1] - 2026-01-27
+
 ### Added
 
 - **`agentverus check` command**: Check any ClawHub skill by slug — downloads the skill ZIP, extracts SKILL.md, scans it, and prints a formatted trust report with category bars, findings, and a verdict. Supports `--json` output and multiple slugs.
@@ -75,5 +109,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OpenClaw, Claude Code, and generic skill format auto-detection.
 - ClawHub zip download support and GitHub URL normalization.
 
-[Unreleased]: https://github.com/agentverus/agentverus-scanner/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/agentverus/agentverus-scanner/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/agentverus/agentverus-scanner/compare/v0.1.1...v0.2.0
+[0.1.1]: https://github.com/agentverus/agentverus-scanner/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/agentverus/agentverus-scanner/releases/tag/v0.1.0

@@ -62,7 +62,7 @@ describe("batchScanRegistry", () => {
 
 		expect(summary.totalSkills).toBe(3);
 		expect(summary.scanned).toBeGreaterThanOrEqual(2);
-		expect(summary.scannerVersion).toBe("0.1.0");
+		expect(summary.scannerVersion).toBe("0.2.0");
 		expect(summary.badges).toBeDefined();
 		expect(summary.averageScore).toBeGreaterThanOrEqual(0);
 		expect(summary.averageScore).toBeLessThanOrEqual(100);
