@@ -197,7 +197,11 @@ export function parseSkill(content: string): ParsedSkill {
 			description =
 				(typeof fm.description === "string" ? fm.description : fm.description?.[0]) ?? "";
 			tools = toStringArray(fm.tools as string | string[] | undefined);
-			permissions = toStringArray(fm.permissions as string | string[] | undefined);
+			permissions = toStringArray(fm.permissions as string | string[] | undefined)
+				// Some OpenClaw skills use a mapping-like list for declarations:
+				// - network: "justification"
+				// parseDeclaredPermissions handles those; they are not runtime permissions.
+				.filter((p) => !/^\s*\w[\w_-]*\s*:/.test(p));
 			dependencies = toStringArray(fm.dependencies as string | string[] | undefined);
 		}
 

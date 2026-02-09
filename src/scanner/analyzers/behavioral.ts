@@ -147,7 +147,8 @@ export async function analyzeBehavioral(skill: ParsedSkill): Promise<CategorySco
 					ctx,
 				);
 
-				if (severityMultiplier === 0) break;
+				// Do not break: an earlier negated mention must not prevent later real matches.
+				if (severityMultiplier === 0) continue;
 
 				const effectiveDeduction = Math.round(pattern.deduction * severityMultiplier);
 				const effectiveSeverity =
@@ -187,7 +188,8 @@ export async function analyzeBehavioral(skill: ParsedSkill): Promise<CategorySco
 		let trapMatch: RegExpExecArray | null;
 		while ((trapMatch = globalTrap.exec(content)) !== null) {
 			const { severityMultiplier } = adjustForContext(trapMatch.index, content, ctx);
-			if (severityMultiplier === 0) break;
+			// Do not break: a negated mention must not prevent later real matches.
+			if (severityMultiplier === 0) continue;
 
 			// Check if this is a well-known installer or in a prerequisites section
 			const isKnownInstaller = KNOWN_INSTALLERS.test(trapMatch[0]);

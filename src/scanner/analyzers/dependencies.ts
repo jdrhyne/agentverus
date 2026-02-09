@@ -1,5 +1,5 @@
 import type { CategoryScore, Finding, ParsedSkill } from "../types.js";
-import { buildContentContext, isInsideCodeBlock, isInsideSafetySection } from "./context.js";
+import { adjustForContext, buildContentContext, isInsideCodeBlock } from "./context.js";
 import { applyDeclaredPermissions } from "./declared-match.js";
 
 /** Trusted domain patterns */
@@ -8,8 +8,6 @@ const TRUSTED_DOMAINS = [
 	/^(?:www\.)?npmjs\.com/,
 	/^registry\.npmjs\.org/,
 	/^(?:www\.)?pypi\.org/,
-	/^docs\./,
-	/^developer\./,
 	/^api\.npmjs\.com/,
 	/^docs\.python\.org/,
 	/^developer\.mozilla\.org/,
@@ -29,8 +27,6 @@ const TRUSTED_DOMAINS = [
 	/^(?:[\w-]+\.)?openai\.com/,
 	/^(?:[\w-]+\.)?anthropic\.com/,
 	/^(?:[\w-]+\.)?supabase\.co/,
-	/^(?:[\w-]+\.)?vercel\.app/,
-	/^(?:[\w-]+\.)?netlify\.app/,
 	/^(?:[\w-]+\.)?heroku\.com/,
 	/^(?:[\w-]+\.)?stripe\.com/,
 	/^(?:[\w-]+\.)?slack\.com/,
@@ -187,39 +183,51 @@ function classifyUrl(url: string): {
 		}
 	}
 
-	// URLs to docs/api subpaths of any HTTPS domain are likely product documentation
-	// e.g., https://www.nutrient.io/api/ or https://docs.someservice.com/
-	if (/^https:\/\//.test(url)) {
-		const pathPart = url.replace(/^https?:\/\/[^/]+/, "");
-		if (/^\/(api|docs|documentation|reference|guide|sdk|getting-started|quickstart)\b/i.test(pathPart)) {
-			return { risk: "trusted", deduction: 0 };
-		}
-	}
-
 	return { risk: "unknown", deduction: 5 };
 }
 
 /**
- * Build a set of "self domains" from the skill's name and description.
- * If the skill is "nutrient-openclaw" and mentions "Nutrient DWS API",
- * then nutrient.io URLs are self-referencing and should be trusted.
+ * Best-effort extraction of base domains that look like they belong to the skill's
+ * own product/brand (self-references).
+ *
+ * SECURITY NOTE:
+ * These are *candidates* only. Never use this to skip or automatically trust URLs.
+ * It is trivial for malicious authors to pick a skill name that matches an attacker
+ * domain. If you want to reduce false positives, use an explicit allowlist or an
+ * opt-in semantic reputation check.
  */
-function extractSelfDomains(skill: ParsedSkill): Set<string> {
-	const selfDomains = new Set<string>();
+export function extractSelfBaseDomains(skill: ParsedSkill): Set<string> {
+	const selfBaseDomains = new Set<string>();
 
-	// Extract domain-like tokens from the skill name (e.g., "nutrient" from "nutrient-openclaw")
-	const nameTokens = (skill.name ?? "").toLowerCase().split(/[-_\s]+/).filter(t => t.length >= 3);
+	const tokenSource = `${skill.name ?? ""} ${skill.description ?? ""}`.toLowerCase();
+	const tokens = tokenSource
+		.split(/[^a-z0-9]+/g)
+		.map((t) => t.trim())
+		.filter((t) => t.length >= 3);
 
-	// Find domains referenced in the URLs and check if they match name tokens
+	const getBaseDomain = (hostnameRaw: string): { baseDomain: string; baseToken: string } | null => {
+		const hostname = hostnameRaw.toLowerCase().replace(/\.$/, "").replace(/^www\./, "");
+		if (!hostname || hostname === "localhost") return null;
+		if (IP_ADDRESS_REGEX.test(hostname)) return null;
+
+		const parts = hostname.split(".").filter(Boolean);
+		if (parts.length < 2) return null;
+		const tld = parts[parts.length - 1];
+		const sld = parts[parts.length - 2];
+		if (!tld || !sld) return null;
+		return { baseDomain: `${sld}.${tld}`, baseToken: sld };
+	};
+
 	for (const url of skill.urls) {
-		const hostname = getHostname(url).toLowerCase().replace(/^www\./, "");
-		const domainBase = hostname.split(".")[0] ?? "";
-		if (domainBase && nameTokens.includes(domainBase)) {
-			selfDomains.add(hostname);
+		const hostname = getHostname(url);
+		const base = getBaseDomain(hostname);
+		if (!base) continue;
+		if (tokens.includes(base.baseToken)) {
+			selfBaseDomains.add(base.baseDomain);
 		}
 	}
 
-	return selfDomains;
+	return selfBaseDomains;
 }
 
 /** Analyze dependencies and external URLs */
@@ -228,20 +236,11 @@ export async function analyzeDependencies(skill: ParsedSkill): Promise<CategoryS
 	let score = 100;
 	const content = skill.rawContent;
 
-	// Build self-domain list — URLs to the skill's own product are trusted
-	const selfDomains = extractSelfDomains(skill);
-
 	// Classify each URL, cap cumulative deduction for low-risk unknowns
 	let unknownUrlDeductionTotal = 0;
 	const UNKNOWN_URL_DEDUCTION_CAP = 15; // max total points lost from unknown (non-dangerous) URLs
 
 	for (const url of skill.urls) {
-		// Check if URL is to the skill's own domain
-		const hostname = getHostname(url).toLowerCase().replace(/^www\./, "");
-		if (selfDomains.has(hostname)) {
-			continue; // Skip — self-referencing URL is trusted
-		}
-
 		const classification = classifyUrl(url);
 
 		if (classification.deduction > 0) {
@@ -297,9 +296,10 @@ export async function analyzeDependencies(skill: ParsedSkill): Promise<CategoryS
 			const matchIndex = match.index;
 			const lineNumber = content.slice(0, matchIndex).split("\n").length;
 
-			// Skip matches inside safety sections
-			if (isInsideSafetySection(matchIndex, ctx)) {
-				break;
+			// Skip truly negated mentions, but never break the scan: later matches may be real.
+			const { severityMultiplier } = adjustForContext(matchIndex, content, ctx);
+			if (severityMultiplier === 0) {
+				continue;
 			}
 
 			// Reduce severity for known legitimate installers

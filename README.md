@@ -111,7 +111,8 @@ jobs:
       security-events: write
     steps:
       - uses: actions/checkout@v4
-      - uses: agentverus/agentverus-scanner/actions/scan-skill@main
+      # Pin to a release tag or SHA for supply-chain safety and reproducibility.
+      - uses: agentverus/agentverus-scanner/actions/scan-skill@v0.3.0
         with:
           target: .
           fail_on_severity: high

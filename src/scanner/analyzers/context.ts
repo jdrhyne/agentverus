@@ -109,13 +109,6 @@ export function isPrecededByNegation(content: string, matchIndex: number): boole
 		return true;
 	}
 
-	// Full line context: "I forget everything" as a descriptive statement (not imperative)
-	const fullLine = content.slice(lineStart, content.indexOf("\n", matchIndex)).toLowerCase();
-	if (/\b(?:agents?\s+|it\s+|they\s+|i\s+|we\s+|bots?\s+|models?\s+|ai\s+)/.test(fullLine.slice(0, matchIndex - lineStart))) {
-		// Subject + verb = descriptive, not imperative instruction
-		return true;
-	}
-
 	return false;
 }
 
@@ -131,16 +124,19 @@ export function adjustForContext(
 	content: string,
 	ctx: ContentContext,
 ): { severityMultiplier: number; reason: string | null } {
-	if (isInsideSafetySection(matchIndex, ctx)) {
-		return { severityMultiplier: 0, reason: "inside safety boundary section" };
-	}
-
 	if (isPrecededByNegation(content, matchIndex)) {
 		return { severityMultiplier: 0, reason: "preceded by negation" };
 	}
 
 	if (isInsideCodeBlock(matchIndex, ctx)) {
 		return { severityMultiplier: 0.3, reason: "inside code block" };
+	}
+
+	// Do NOT suppress findings just because they're under a "Safety Boundaries"/"Limitations" heading.
+	// Authors control headings; malicious instructions can be hidden there. We keep full weight but
+	// annotate the context in finding titles via the returned reason.
+	if (isInsideSafetySection(matchIndex, ctx)) {
+		return { severityMultiplier: 1.0, reason: "inside safety boundary section" };
 	}
 
 	return { severityMultiplier: 1.0, reason: null };

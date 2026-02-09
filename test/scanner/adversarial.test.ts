@@ -84,8 +84,7 @@ describe("adversarial evasion tests", () => {
 
 			// A rephrased jailbreak avoids standard keywords but the intent is clear.
 			// Without LLM analysis, regex may miss it — but it should NOT get certified.
-			// At minimum the content analysis should flag missing safety boundaries.
-			expect(report.findings.length).toBeGreaterThan(0);
+			expect(report.badge).not.toBe("certified");
 		});
 	});
 

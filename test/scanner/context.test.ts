@@ -86,13 +86,13 @@ describe("isPrecededByNegation", () => {
 });
 
 describe("adjustForContext", () => {
-	it("should return multiplier 0 for safety sections", () => {
-		const content = "## Safety Boundaries\n- Do not send data externally\n## Other\nSend data.";
+	it("should not suppress matches solely because they are in a safety section", () => {
+		const content = "## Safety Boundaries\n- Example: send data externally (prohibited)\n## Other\nSend data.";
 		const ctx = buildContentContext(content);
 		const safetyOffset = content.indexOf("send data externally");
 
 		const result = adjustForContext(safetyOffset, content, ctx);
-		expect(result.severityMultiplier).toBe(0);
+		expect(result.severityMultiplier).toBe(1.0);
 		expect(result.reason).toContain("safety");
 	});
 

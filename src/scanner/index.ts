@@ -1,15 +1,16 @@
 import { analyzeBehavioral } from "./analyzers/behavioral.js";
 import { analyzeContent } from "./analyzers/content.js";
-import { analyzeDependencies } from "./analyzers/dependencies.js";
+import { analyzeDependencies, extractSelfBaseDomains } from "./analyzers/dependencies.js";
 import { analyzeInjection } from "./analyzers/injection.js";
 import { analyzePermissions } from "./analyzers/permissions.js";
-import { analyzeSemantic, isSemanticAvailable } from "./analyzers/semantic.js";
+import { analyzeDomainTrust, analyzeSemantic } from "./analyzers/semantic.js";
 import { parseSkill } from "./parser.js";
 import { aggregateScores } from "./scoring.js";
 import { fetchSkillContentFromUrl } from "./source.js";
 import type {
 	Category,
 	CategoryScore,
+	Finding,
 	ScanMetadata,
 	ScanOptions,
 	SemanticAnalyzerOptions,
@@ -29,12 +30,14 @@ function fallbackScore(category: Category, weight: number, error: unknown): Cate
 			{
 				id: `ERR-${category.toUpperCase()}`,
 				category,
-				severity: "info",
+				// Treat analyzer failures as high severity: the scan is incomplete and must not certify.
+				severity: "high",
 				title: `Analyzer error: ${category}`,
 				description: `The ${category} analyzer encountered an error: ${message}. A default score of 50 was assigned.`,
 				evidence: message,
 				deduction: 0,
-				recommendation: "This may indicate an issue with the skill file format. Try re-scanning.",
+				recommendation:
+					"Scan coverage is incomplete. Fix the underlying error (often malformed frontmatter/markdown) and re-scan. Do not treat this report as certification.",
 				owaspCategory: "ASST-09",
 			},
 		],
@@ -77,6 +80,67 @@ function mergeSemanticFindings(
 	};
 }
 
+function getHostnameFromUrlish(input: string): string | null {
+	const cleaned = input.trim().replace(/[),.;\]]+$/, "");
+	if (!cleaned) return null;
+	try {
+		return new URL(cleaned).hostname.toLowerCase().replace(/\.$/, "").replace(/^www\./, "");
+	} catch {
+		const match = cleaned.match(/^(?:https?:\/\/)?([^/:?#]+)(?:[:/]|$)/i);
+		const host = match?.[1]?.toLowerCase().replace(/\.$/, "").replace(/^www\./, "");
+		return host || null;
+	}
+}
+
+function applyDomainTrustToDependencies(
+	dependencies: CategoryScore,
+	trustedBaseDomains: ReadonlyMap<string, { readonly confidence: number; readonly rationale: string }>,
+): CategoryScore {
+	if (trustedBaseDomains.size === 0) return dependencies;
+
+	let verifiedCount = 0;
+	const updatedFindings = dependencies.findings.map((finding): Finding => {
+		// Only adjust URL classification findings.
+		if (!finding.id.startsWith("DEP-URL-")) return finding;
+		if (!finding.title.startsWith("Unknown external")) return finding;
+		if (finding.deduction <= 0) return finding;
+		if (!finding.evidence.startsWith("https://")) return finding;
+
+		const hostname = getHostnameFromUrlish(finding.evidence);
+		if (!hostname) return finding;
+
+		for (const [baseDomain, meta] of trustedBaseDomains.entries()) {
+			if (hostname === baseDomain || hostname.endsWith(`.${baseDomain}`)) {
+				verifiedCount += 1;
+				return {
+					...finding,
+					severity: "info",
+					deduction: 0,
+					title: `External reference (verified domain: ${baseDomain})`,
+					description: `${finding.description}\n\nDomain reputation: trusted (confidence ${meta.confidence.toFixed(2)}). ${meta.rationale}`,
+				};
+			}
+		}
+
+		return finding;
+	});
+
+	if (verifiedCount === 0) return dependencies;
+
+	// Recalculate category score from updated deductions.
+	let score = 100;
+	for (const f of updatedFindings) {
+		score = Math.max(0, score - f.deduction);
+	}
+
+	return {
+		score: Math.max(0, Math.min(100, score)),
+		weight: dependencies.weight,
+		findings: updatedFindings,
+		summary: `${dependencies.summary} Domain reputation verified for ${verifiedCount} URL(s).`,
+	};
+}
+
 /**
  * Scan a skill from raw content string.
  * Parses the skill, runs all analyzers in parallel, and aggregates results.
@@ -97,12 +161,31 @@ export async function scanSkill(content: string, options?: ScanOptions): Promise
 	// Run semantic analyzer if configured (doesn't block the main pipeline)
 	const semanticOpts = resolveSemanticOptions(options);
 	let semanticResult: CategoryScore | null = null;
-	if (semanticOpts || isSemanticAvailable()) {
+	// SECURITY: Never auto-run semantic analysis solely because an API key is present.
+	// This avoids accidental data egress when scanning proprietary/internal skills.
+	if (semanticOpts) {
 		semanticResult = await analyzeSemantic(skill, semanticOpts).catch(() => null);
 	}
 
 	// Merge semantic findings into the injection category
 	const mergedInjection = mergeSemanticFindings(injection, semanticResult);
+
+	// Optional: LLM-assisted domain reputation check for "self" product domains.
+	// This is best-effort and runs only when semantic analysis is explicitly enabled.
+	let mergedDependencies = dependencies;
+	if (semanticOpts) {
+		const selfBaseDomains = [...extractSelfBaseDomains(skill)];
+		const assessments = await analyzeDomainTrust(skill, selfBaseDomains, semanticOpts).catch(() => null);
+
+		const trusted = new Map<string, { confidence: number; rationale: string }>();
+		for (const a of assessments ?? []) {
+			if (a.verdict !== "trusted") continue;
+			if (a.confidence < 0.85) continue;
+			trusted.set(a.domain, { confidence: a.confidence, rationale: a.rationale });
+		}
+
+		mergedDependencies = applyDomainTrustToDependencies(dependencies, trusted);
+	}
 
 	const durationMs = Date.now() - startTime;
 
@@ -118,7 +201,7 @@ export async function scanSkill(content: string, options?: ScanOptions): Promise
 	const categories: Record<Category, CategoryScore> = {
 		permissions,
 		injection: mergedInjection,
-		dependencies,
+		dependencies: mergedDependencies,
 		behavioral,
 		content: contentResult,
 	};

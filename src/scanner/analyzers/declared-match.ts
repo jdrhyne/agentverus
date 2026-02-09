@@ -104,8 +104,13 @@ export function findMatchingDeclaration(
 
 /**
  * Apply declared permission matching to a list of findings.
- * Findings that match a declared permission are downgraded to "info" with 0 deduction.
- * Returns a new array of findings with modifications applied.
+ *
+ * SECURITY NOTE:
+ * Declared permissions are untrusted, author-controlled input. They can provide useful context,
+ * but must never be used to suppress/downgrade real findings (otherwise a malicious author can
+ * self-declare broad kinds like "network" or "credential_access" to neutralize critical alerts).
+ *
+ * We only annotate matching findings with the declaration + justification.
  */
 export function applyDeclaredPermissions(
 	findings: readonly Finding[],
@@ -114,18 +119,13 @@ export function applyDeclaredPermissions(
 	if (declaredPermissions.length === 0) return [...findings];
 
 	return findings.map((finding) => {
-		// Don't downgrade info findings — they're already informational
-		if (finding.severity === "info") return finding;
-
 		const match = findMatchingDeclaration(finding, declaredPermissions);
 		if (!match) return finding;
 
 		return {
 			...finding,
-			severity: "info" as const,
-			deduction: 0,
 			title: `${finding.title} (declared: ${match.kind})`,
-			description: `${finding.description} [Declared and verified — "${match.justification}"]`,
+			description: `${finding.description}\n\nDeclared permission: ${match.kind} — ${match.justification}`,
 		};
 	});
 }

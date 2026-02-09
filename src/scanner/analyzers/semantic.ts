@@ -8,8 +8,7 @@ import type { CategoryScore, Finding, ParsedSkill, Severity } from "../types.js"
  * and subtle manipulation that regex patterns miss.
  *
  * This analyzer is OPTIONAL. It is only invoked when:
- *   - The `AGENTVERUS_LLM_API_KEY` environment variable is set, or
- *   - Explicit SemanticOptions are passed in ScanOptions
+ *   - Explicit SemanticOptions are passed in ScanOptions (i.e., the caller opted in)
  *
  * It does NOT replace the regex analyzers — it supplements them.
  * Its weight in the overall score is 0 (additive findings only).
@@ -41,6 +40,19 @@ interface LlmFinding {
 interface LlmResponse {
 	readonly findings: readonly LlmFinding[];
 	readonly summary: string;
+}
+
+/** LLM structured response for domain trust checks */
+export interface DomainTrustAssessment {
+	readonly domain: string;
+	readonly verdict: "trusted" | "unknown" | "suspicious";
+	/** 0.0 - 1.0 */
+	readonly confidence: number;
+	readonly rationale: string;
+}
+
+interface DomainTrustResponse {
+	readonly assessments: readonly DomainTrustAssessment[];
 }
 
 const SYSTEM_PROMPT = `You are a security auditor for AI agent skills. You analyze skill definition files (markdown) and identify security threats that simple pattern matching would miss.
@@ -76,6 +88,29 @@ Respond ONLY with a JSON object matching this schema:
 
 If the skill is safe, return: {"findings": [], "summary": "No semantic threats detected."}
 Return ONLY valid JSON. No markdown fences. No explanation outside the JSON.`;
+
+const DOMAIN_TRUST_SYSTEM_PROMPT = `You are a security reviewer helping assess whether domains referenced by an AI agent skill appear to be the official/legitimate domain for the product/brand described by the skill.
+
+You are NOT browsing the web. Base your judgement on plausibility only (brand match, obvious typosquatting, suspicious hosting patterns).
+
+Be conservative:
+- Only return verdict="trusted" when the domain strongly matches the brand/product name and looks like a plausible official domain.
+- Use verdict="unknown" when you are not sure.
+- Use verdict="suspicious" when the domain looks like typosquatting, misleading branding, or an obviously unrelated/random domain.
+
+Respond ONLY with JSON matching this schema:
+{
+  "assessments": [
+    {
+      "domain": "example.com",
+      "verdict": "trusted|unknown|suspicious",
+      "confidence": 0.0,
+      "rationale": "One short sentence"
+    }
+  ]
+}
+
+Return ONLY valid JSON. No markdown fences. No extra keys.`;
 
 /** Map LLM category strings to our ASST taxonomy */
 function mapCategory(category: string): string {
@@ -176,6 +211,112 @@ async function callLlm(
 	} finally {
 		clearTimeout(timer);
 	}
+}
+
+async function callDomainTrustLlm(
+	payload: Readonly<{
+		readonly skillName: string;
+		readonly skillDescription: string;
+		readonly domains: readonly string[];
+	}>,
+	options: SemanticOptions,
+): Promise<DomainTrustResponse | null> {
+	const apiBase = (options.apiBase ?? "https://api.openai.com/v1").replace(/\/+$/, "");
+	const apiKey = options.apiKey ?? process.env.AGENTVERUS_LLM_API_KEY;
+	const model = options.model ?? "gpt-4o";
+	const timeout = options.timeout ?? 30_000;
+
+	if (!apiKey) return null;
+
+	const controller = new AbortController();
+	const timer = setTimeout(() => controller.abort(), timeout);
+
+	try {
+		const response = await fetch(`${apiBase}/chat/completions`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${apiKey}`,
+			},
+			body: JSON.stringify({
+				model,
+				messages: [
+					{ role: "system", content: DOMAIN_TRUST_SYSTEM_PROMPT },
+					{
+						role: "user",
+						content: JSON.stringify(payload),
+					},
+				],
+				temperature: 0.1,
+				max_tokens: 800,
+			}),
+			signal: controller.signal,
+		});
+
+		if (!response.ok) return null;
+
+		const data = (await response.json()) as {
+			choices?: Array<{ message?: { content?: string } }>;
+		};
+		const text = data.choices?.[0]?.message?.content?.trim();
+		if (!text) return null;
+
+		const cleaned = text.replace(/^```(?:json)?\s*\n?/i, "").replace(/\n?```\s*$/i, "");
+		const parsed = JSON.parse(cleaned) as DomainTrustResponse;
+		if (!Array.isArray(parsed.assessments)) return null;
+		return parsed;
+	} catch {
+		return null;
+	} finally {
+		clearTimeout(timer);
+	}
+}
+
+/**
+ * Optional LLM-assisted domain trust check.
+ *
+ * IMPORTANT: This is a best-effort plausibility check only. It must not be used
+ * as an authoritative allowlist. Callers should use it to reduce false positives
+ * when a skill references its own product domain.
+ */
+export async function analyzeDomainTrust(
+	skill: ParsedSkill,
+	domains: readonly string[],
+	options?: SemanticOptions,
+): Promise<readonly DomainTrustAssessment[] | null> {
+	const resolvedOptions: SemanticOptions = {
+		apiBase: options?.apiBase,
+		apiKey: options?.apiKey ?? process.env.AGENTVERUS_LLM_API_KEY,
+		model: options?.model,
+		timeout: options?.timeout,
+	};
+
+	if (!resolvedOptions.apiKey) return null;
+
+	const unique = [...new Set(domains.map((d) => d.trim().toLowerCase()).filter(Boolean))].slice(
+		0,
+		20,
+	);
+	if (unique.length === 0) return null;
+
+	const payload = {
+		skillName: skill.name ?? "",
+		skillDescription: skill.description ?? "",
+		domains: unique,
+	};
+
+	const result = await callDomainTrustLlm(payload, resolvedOptions);
+	if (!result) return null;
+
+	return result.assessments
+		.filter((a) => typeof a?.domain === "string")
+		.map((a) => ({
+			domain: String(a.domain).toLowerCase(),
+			verdict:
+				a.verdict === "trusted" || a.verdict === "suspicious" ? a.verdict : ("unknown" as const),
+			confidence: Math.max(0, Math.min(1, Number(a.confidence) || 0)),
+			rationale: typeof a.rationale === "string" ? a.rationale.slice(0, 200) : "",
+		}));
 }
 
 /**
