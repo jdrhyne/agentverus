@@ -194,6 +194,13 @@ function stripIpv6Zone(ip: string): string {
 	return idx === -1 ? ip : ip.slice(0, idx);
 }
 
+function parseIpv4ToBytes(ip: string): readonly [number, number, number, number] | null {
+	const parts = ip.split(".").map((p) => Number.parseInt(p, 10));
+	if (parts.length !== 4) return null;
+	if (parts.some((n) => Number.isNaN(n) || n < 0 || n > 255)) return null;
+	return [parts[0] ?? 0, parts[1] ?? 0, parts[2] ?? 0, parts[3] ?? 0];
+}
+
 function isBlockedIpv4(ip: string): boolean {
 	const parts = ip.split(".").map((p) => Number.parseInt(p, 10));
 	if (parts.length !== 4) return true;
@@ -217,21 +224,136 @@ function isBlockedIpv4(ip: string): boolean {
 	return false;
 }
 
-function isBlockedIpv6(ipRaw: string): boolean {
+function parseIpv6ToBytes(ipRaw: string): Uint8Array | null {
 	const ip = stripIpv6Zone(ipRaw).toLowerCase();
-	if (!ip) return true;
+	if (!ip) return null;
 
-	// Loopback / unspecified
-	if (ip === "::1" || ip === "0:0:0:0:0:0:0:1") return true;
-	if (ip === "::" || ip === "0:0:0:0:0:0:0:0") return true;
+	let normalized = ip;
+	// Embedded IPv4 in last 32 bits (e.g., ::ffff:127.0.0.1 or ::127.0.0.1)
+	if (normalized.includes(".")) {
+		const lastColon = normalized.lastIndexOf(":");
+		if (lastColon === -1) return null;
+		const ipv4Part = normalized.slice(lastColon + 1);
+		const ipv4Bytes = parseIpv4ToBytes(ipv4Part);
+		if (!ipv4Bytes) return null;
+		const hi = ((ipv4Bytes[0] << 8) | ipv4Bytes[1]).toString(16);
+		const lo = ((ipv4Bytes[2] << 8) | ipv4Bytes[3]).toString(16);
+		normalized = `${normalized.slice(0, lastColon)}:${hi}:${lo}`;
+	}
 
-	const compact = ip.replace(/:/g, "");
-	// Link-local fe80::/10 => fe8, fe9, fea, feb
-	if (/^fe[89ab]/.test(compact)) return true;
-	// Unique local fc00::/7 => fc, fd
-	if (/^f[cd]/.test(compact)) return true;
+	// Reject multiple "::" compressions.
+	const firstDbl = normalized.indexOf("::");
+	if (firstDbl !== -1 && normalized.indexOf("::", firstDbl + 1) !== -1) return null;
+
+	let parts: string[];
+	if (firstDbl !== -1) {
+		const [left, right] = normalized.split("::");
+		const leftParts = left ? left.split(":") : [];
+		const rightParts = right ? right.split(":") : [];
+		if (leftParts.some((p) => p === "") || rightParts.some((p) => p === "")) return null;
+
+		const missing = 8 - (leftParts.length + rightParts.length);
+		if (missing < 1) return null;
+		parts = [...leftParts, ...Array.from({ length: missing }, () => "0"), ...rightParts];
+	} else {
+		parts = normalized.split(":");
+		if (parts.length !== 8) return null;
+		if (parts.some((p) => p === "")) return null;
+	}
+
+	if (parts.length !== 8) return null;
+
+	const out = new Uint8Array(16);
+	for (let i = 0; i < 8; i += 1) {
+		const part = parts[i];
+		if (!part || part.length > 4) return null;
+		const value = Number.parseInt(part, 16);
+		if (Number.isNaN(value) || value < 0 || value > 0xffff) return null;
+		out[i * 2] = (value >>> 8) & 0xff;
+		out[i * 2 + 1] = value & 0xff;
+	}
+
+	return out;
+}
+
+function isAllZero(bytes: Uint8Array, start: number, endExclusive: number): boolean {
+	for (let i = start; i < endExclusive; i += 1) {
+		if (bytes[i] !== 0) return false;
+	}
+	return true;
+}
+
+function isBlockedIpv6(ipRaw: string): boolean {
+	const bytes = parseIpv6ToBytes(ipRaw);
+	if (!bytes) return true;
+	if (bytes.length !== 16) return true;
+	const b = (idx: number): number => bytes[idx]!;
+
+	// Unspecified ::/128
+	if (isAllZero(bytes, 0, 16)) return true;
+
+	// Loopback ::1/128
+	if (isAllZero(bytes, 0, 15) && b(15) === 1) return true;
+
 	// Multicast ff00::/8
-	if (/^ff/.test(compact)) return true;
+	if (b(0) === 0xff) return true;
+
+	// Link-local fe80::/10
+	if (b(0) === 0xfe && (b(1) & 0xc0) === 0x80) return true;
+
+	// Site-local fec0::/10 (deprecated but still potentially routable in some environments)
+	if (b(0) === 0xfe && (b(1) & 0xc0) === 0xc0) return true;
+
+	// Unique local fc00::/7
+	if ((b(0) & 0xfe) === 0xfc) return true;
+
+	// IPv4-mapped ::ffff:0:0/96
+	if (isAllZero(bytes, 0, 10) && b(10) === 0xff && b(11) === 0xff) {
+		const ipv4 = `${b(12)}.${b(13)}.${b(14)}.${b(15)}`;
+		return isBlockedIpv4(ipv4);
+	}
+
+	// IPv4-compatible ::/96 (deprecated)
+	if (isAllZero(bytes, 0, 12)) {
+		const ipv4 = `${b(12)}.${b(13)}.${b(14)}.${b(15)}`;
+		return isBlockedIpv4(ipv4);
+	}
+
+	// NAT64 well-known prefix 64:ff9b::/96
+	if (
+		b(0) === 0x00 &&
+		b(1) === 0x64 &&
+		b(2) === 0xff &&
+		b(3) === 0x9b &&
+		isAllZero(bytes, 4, 12)
+	) {
+		const ipv4 = `${b(12)}.${b(13)}.${b(14)}.${b(15)}`;
+		return isBlockedIpv4(ipv4);
+	}
+
+	// 6to4 2002::/16 embeds an IPv4 address (bytes 2..5)
+	if (b(0) === 0x20 && b(1) === 0x02) {
+		const ipv4 = `${b(2)}.${b(3)}.${b(4)}.${b(5)}`;
+		return isBlockedIpv4(ipv4);
+	}
+
+	// Teredo 2001:0000::/32 can embed internal IPv4 and is a known SSRF bypass vector.
+	if (b(0) === 0x20 && b(1) === 0x01 && b(2) === 0x00 && b(3) === 0x00) return true;
+
+	// Documentation-only prefix 2001:db8::/32 (non-routable)
+	if (b(0) === 0x20 && b(1) === 0x01 && b(2) === 0x0d && b(3) === 0xb8) return true;
+
+	// Benchmarking 2001:2::/48 (non-public)
+	if (
+		b(0) === 0x20 &&
+		b(1) === 0x01 &&
+		b(2) === 0x00 &&
+		b(3) === 0x02 &&
+		b(4) === 0x00 &&
+		b(5) === 0x00
+	) {
+		return true;
+	}
 
 	return false;
 }
@@ -264,7 +386,12 @@ async function assertUrlAllowed(url: URL): Promise<void> {
 		throw new Error(`Non-standard ports are not allowed (got :${url.port}).`);
 	}
 
-	const hostname = url.hostname.replace(/\.$/, "").toLowerCase();
+	const hostnameRaw = url.hostname.replace(/\.$/, "").toLowerCase();
+	// Node's URL.hostname includes brackets for IPv6 literals (e.g. "[::1]").
+	const hostname =
+		hostnameRaw.startsWith("[") && hostnameRaw.endsWith("]")
+			? hostnameRaw.slice(1, -1)
+			: hostnameRaw;
 	if (!hostname) throw new Error("URL hostname is missing.");
 
 	// Common SSRF targets.
