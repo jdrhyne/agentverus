@@ -30,6 +30,7 @@ describe("aggregateScores", () => {
 			dependencies: makeCategoryScore(100, 0.2),
 			behavioral: makeCategoryScore(100, 0.15),
 			content: makeCategoryScore(100, 0.1),
+			"code-safety": makeCategoryScore(100, 0.15),
 		};
 
 		const report = aggregateScores(categories, metadata);
@@ -44,6 +45,7 @@ describe("aggregateScores", () => {
 			dependencies: makeCategoryScore(95, 0.2),
 			behavioral: makeCategoryScore(90, 0.15),
 			content: makeCategoryScore(85, 0.1),
+			"code-safety": makeCategoryScore(100, 0.15),
 		};
 
 		const report = aggregateScores(categories, metadata);
@@ -72,6 +74,7 @@ describe("aggregateScores", () => {
 			dependencies: makeCategoryScore(95, 0.2),
 			behavioral: makeCategoryScore(95, 0.15),
 			content: makeCategoryScore(95, 0.1),
+			"code-safety": makeCategoryScore(100, 0.15),
 		};
 
 		const report = aggregateScores(categories, metadata);
@@ -85,6 +88,7 @@ describe("aggregateScores", () => {
 			dependencies: makeCategoryScore(30, 0.2),
 			behavioral: makeCategoryScore(40, 0.15),
 			content: makeCategoryScore(50, 0.1),
+			"code-safety": makeCategoryScore(100, 0.15),
 		};
 
 		const report = aggregateScores(categories, metadata);
@@ -113,6 +117,7 @@ describe("aggregateScores", () => {
 			dependencies: makeCategoryScore(80, 0.2),
 			behavioral: makeCategoryScore(80, 0.15),
 			content: makeCategoryScore(75, 0.1),
+			"code-safety": makeCategoryScore(100, 0.15),
 		};
 
 		const report = aggregateScores(categories, metadata);
@@ -170,6 +175,7 @@ describe("aggregateScores", () => {
 				],
 			}),
 			content: makeCategoryScore(80, 0.1),
+			"code-safety": makeCategoryScore(100, 0.15),
 		};
 
 		const report = aggregateScores(categories, metadata);

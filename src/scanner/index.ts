@@ -1,4 +1,5 @@
 import { analyzeBehavioral } from "./analyzers/behavioral.js";
+import { analyzeCodeSafety } from "./analyzers/code-safety.js";
 import { analyzeContent } from "./analyzers/content.js";
 import { analyzeDependencies, extractSelfBaseDomains } from "./analyzers/dependencies.js";
 import { analyzeInjection } from "./analyzers/injection.js";
@@ -150,12 +151,13 @@ export async function scanSkill(content: string, options?: ScanOptions): Promise
 	const skill = parseSkill(content);
 
 	// Run all analyzers in parallel with error handling
-	const [permissions, injection, dependencies, behavioral, contentResult] = await Promise.all([
-		analyzePermissions(skill).catch((e) => fallbackScore("permissions", 0.25, e)),
-		analyzeInjection(skill).catch((e) => fallbackScore("injection", 0.3, e)),
-		analyzeDependencies(skill).catch((e) => fallbackScore("dependencies", 0.2, e)),
+	const [permissions, injection, dependencies, behavioral, contentResult, codeSafety] = await Promise.all([
+		analyzePermissions(skill).catch((e) => fallbackScore("permissions", 0.20, e)),
+		analyzeInjection(skill).catch((e) => fallbackScore("injection", 0.25, e)),
+		analyzeDependencies(skill).catch((e) => fallbackScore("dependencies", 0.15, e)),
 		analyzeBehavioral(skill).catch((e) => fallbackScore("behavioral", 0.15, e)),
-		analyzeContent(skill).catch((e) => fallbackScore("content", 0.1, e)),
+		analyzeContent(skill).catch((e) => fallbackScore("content", 0.10, e)),
+		analyzeCodeSafety(skill).catch((e) => fallbackScore("code-safety", 0.15, e)),
 	]);
 
 	// Run semantic analyzer if configured (doesn't block the main pipeline)
@@ -204,6 +206,7 @@ export async function scanSkill(content: string, options?: ScanOptions): Promise
 		dependencies: mergedDependencies,
 		behavioral,
 		content: contentResult,
+		"code-safety": codeSafety,
 	};
 
 	return aggregateScores(categories, metadata);

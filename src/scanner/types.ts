@@ -5,7 +5,7 @@ export type SkillFormat = "openclaw" | "claude" | "generic";
 export type Severity = "critical" | "high" | "medium" | "low" | "info";
 
 /** Analysis category */
-export type Category = "permissions" | "injection" | "dependencies" | "behavioral" | "content";
+export type Category = "permissions" | "injection" | "dependencies" | "behavioral" | "content" | "code-safety";
 
 /** Badge tier based on score and findings */
 export type BadgeTier = "certified" | "conditional" | "suspicious" | "rejected";

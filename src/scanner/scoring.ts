@@ -18,11 +18,12 @@ const SEVERITY_ORDER: Record<string, number> = {
 
 /** Category weights for overall score calculation */
 const CATEGORY_WEIGHTS: Record<Category, number> = {
-	permissions: 0.25,
-	injection: 0.3,
-	dependencies: 0.2,
+	permissions: 0.20,
+	injection: 0.25,
+	dependencies: 0.15,
 	behavioral: 0.15,
-	content: 0.1,
+	content: 0.10,
+	"code-safety": 0.15,
 };
 
 /**
