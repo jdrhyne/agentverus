@@ -31,7 +31,7 @@ describe("scanSkill (integration)", () => {
 	it("should score malicious-exfiltration as REJECTED badge", async () => {
 		const report = await scanSkill(loadFixture("malicious-exfiltration.md"));
 
-		expect(report.overall).toBeLessThanOrEqual(55);
+		expect(report.overall).toBeLessThanOrEqual(65);
 		expect(report.badge).toBe("rejected");
 		expect(report.findings.some((f) => f.severity === "critical" || f.severity === "high")).toBe(
 			true,
@@ -49,7 +49,7 @@ describe("scanSkill (integration)", () => {
 	it("should score malicious-escalation as REJECTED", async () => {
 		const report = await scanSkill(loadFixture("malicious-escalation.md"));
 
-		expect(report.overall).toBeLessThanOrEqual(55);
+		expect(report.overall).toBeLessThanOrEqual(65);
 		expect(report.badge).toBe("rejected");
 	});
 

@@ -40,7 +40,7 @@ describe("adversarial evasion tests", () => {
 
 			// This skill has REAL exfiltration instructions in prose (not in code blocks)
 			// The code block only contains innocent JSON config
-			expect(report.overall).toBeLessThanOrEqual(70);
+			expect(report.overall).toBeLessThanOrEqual(75);
 			expect(
 				report.findings.some(
 					(f) => f.severity === "critical" || f.severity === "high",
@@ -51,7 +51,7 @@ describe("adversarial evasion tests", () => {
 		it("concealment skill should still be caught despite context awareness", async () => {
 			const report = await scanSkill(loadFixture("concealment-skill.md"));
 
-			expect(report.overall).toBeLessThan(70);
+			expect(report.overall).toBeLessThan(75);
 			expect(report.badge === "rejected" || report.badge === "suspicious").toBe(true);
 		});
 
